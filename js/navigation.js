@@ -154,7 +154,7 @@
             </div>
           </div>
           <div class="footer-bottom">
-            <span>© ${new Date().getFullYear()} Tournechec — Tous droits réservés.</span>
+            <span>© ${new Date().getFullYear()} Tournechec — Tous droits réservés. <a href="mentions-legales.html">Mentions légales</a> · <a href="confidentialite.html">Confidentialité</a></span>
             <span class="made">Fait avec passion pour la communauté échiquéenne.</span>
           </div>
         </div>

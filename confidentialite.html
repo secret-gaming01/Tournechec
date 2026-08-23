@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Politique de confidentialité · Tournechec</title>
+  <meta name="description" content="Politique de confidentialité de Tournechec : données collectées, finalités, conservation, sécurité et vos droits (RGPD).">
+  <link rel="icon" type="image/svg+xml" href="media/images/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/general.css">
+  <link rel="stylesheet" href="styles/header.css">
+  <link rel="stylesheet" href="styles/bottom.css">
+  <link rel="stylesheet" href="styles/pages.css">
+</head>
+<body data-page="confidentialite">
+  <div id="site-header"></div>
+
+  <main>
+    <section class="page-head">
+      <div class="container section-head center">
+        <span class="kicker">Vos données, vos droits</span>
+        <h1>Politique de confidentialité</h1>
+        <p>Comment Tournechec collecte, utilise et protège vos données, dans le respect du RGPD.</p>
+      </div>
+    </section>
+
+    <section class="section-tight">
+      <div class="container" style="max-width:820px;">
+        <div class="card mb-2 reveal">
+          <h3>1. Qui est responsable de vos données ?</h3>
+          <p class="muted">Le responsable du traitement est le développeur du site Tournechec. Pour toute question sur vos données, utilisez le <a href="aide.html">formulaire de la page Aide</a>.</p>
+        </div>
+
+        <div class="card mb-2 reveal">
+          <h3>2. Quelles données collectons-nous ?</h3>
+          <ul class="muted" style="line-height:1.9;">
+            <li><strong>Lors de l'inscription :</strong> nom complet, adresse courriel, mot de passe (chiffré, jamais lisible), année scolaire et Elo auto-déclaré.</li>
+            <li><strong>Lors de l'utilisation :</strong> tournois créés, inscriptions, présences, résultats de parties, messages envoyés au support et notifications reçues.</li>
+            <li><strong>Pas de tracking :</strong> aucun cookie publicitaire, aucun traceur tiers, aucune revente de données. Rien n'est collecté en arrière-plan.</li>
+          </ul>
+        </div>
+
+        <div class="card mb-2 reveal">
+          <h3>3. Pourquoi ces données ?</h3>
+          <ul class="muted" style="line-height:1.9;">
+            <li>Créer et sécuriser votre compte (exécution du service).</li>
+            <li>Générer les appariements, les tables et les classements des tournois.</li>
+            <li>Vous notifier quand vos tables sont publiées ou qu'un tournoi se termine.</li>
+            <li>Répondre à vos demandes via le support.</li>
+          </ul>
+        </div>
+
+        <div class="card mb-2 reveal">
+          <h3>4. Combien de temps ?</h3>
+          <p class="muted">Vos données sont conservées tant que votre compte existe. Vous pouvez supprimer votre compte à tout moment depuis la page <a href="parametres.html">Paramètres</a> : toutes vos informations personnelles (profil, inscriptions, notifications) sont alors effacées définitivement. Les résultats de tournois passés peuvent être conservés anonymement pour l'historique.</p>
+        </div>
+
+        <div class="card mb-2 reveal">
+          <h3>5. Où sont hébergées les données ?</h3>
+          <p class="muted">Le site est servi par GitHub Pages (États-Unis) et les données sont stockées chez Supabase, notre sous-traitant technique (infrastructure conforme RGPD). Les mots de passe sont hachés par le système d'authentification de Supabase : même l'administrateur ne peut pas les lire. L'accès à la base est restreint par des règles de sécurité strictes : un joueur ne voit que ses tournois, un arbitre ne gère que ses tournois.</p>
+        </div>
+
+        <div class="card mb-2 reveal">
+          <h3>6. Mineurs</h3>
+          <p class="muted">Tournechec est conçu pour le milieu scolaire. Si vous avez moins de 15 ans, demandez l'accord d'un parent ou de votre responsable légal avant de créer un compte. Les enseignants-arbitres restent responsables des données des élèves qu'ils inscrivent à leurs tournois.</p>
+        </div>
+
+        <div class="card reveal">
+          <h3>7. Vos droits</h3>
+          <p class="muted">Conformément au RGPD, vous disposez d'un droit d'accès, de rectification, d'effacement, de limitation, d'opposition et de portabilité de vos données.<br>
+          En pratique : modifiez votre profil ou supprimez votre compte dans les <a href="parametres.html">Paramètres</a>, ou écrivez-nous via la <a href="aide.html">page Aide</a>. Vous pouvez aussi introduire une réclamation auprès de la CNIL (<a href="https://www.cnil.fr" target="_blank" rel="noopener">cnil.fr</a>).</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/navigation.js"></script>
+</body>
+</html>
