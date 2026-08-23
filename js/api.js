@@ -461,7 +461,7 @@
         const user = await requireUser();
         const name = String(body.name || "").trim().slice(0, 120);
         if (name.length < 3) throw new ApiError("Le nom du tournoi doit faire au moins 3 caractères.");
-        const inserted = await q(
+        await q(
           () =>
             client
               .from("tournaments")
@@ -477,12 +477,20 @@
                 status: "brouillon",
                 public: body.public !== false,
                 creator_id: user.id,
-              })
-              .select("id")
-              .single(),
+              }),
           "Création non autorisée."
         );
-        const tid = inserted.id;
+        const created = await q(() =>
+          client
+            .from("tournaments")
+            .select("id")
+            .eq("creator_id", user.id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle()
+        );
+        if (!created) throw new ApiError("Tournoi créé mais impossible de le récupérer.", 500);
+        const tid = created.id;
         await q(() => client.from("tournament_arbitres").insert({ tournament_id: tid, user_id: user.id }));
         return { id: tid };
       }
@@ -747,10 +755,14 @@
           }
         }
 
-        const newRound = await q(
-          () => client.from("rounds").insert({ tournament_id: tid, round_number: roundNumber }).select("id").single(),
+        await q(
+          () => client.from("rounds").insert({ tournament_id: tid, round_number: roundNumber }),
           "Génération non autorisée."
         );
+        const newRound = await q(() =>
+          client.from("rounds").select("id").eq("tournament_id", tid).eq("round_number", roundNumber).maybeSingle()
+        );
+        if (!newRound) throw new ApiError("Ronde créée mais impossible de la récupérer.", 500);
         const matchRows = pairs.map((p, i) => ({
           round_id: newRound.id,
           table_number: i + 1,
