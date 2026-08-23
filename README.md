@@ -6,10 +6,10 @@
 
 **Organisez des tournois d'échecs rapidement et efficacement** — du club scolaire au grand événement.
 
-[![Site en ligne](https://img.shields.io/badge/Site-tournechec-2f54eb?style=for-the-badge&logo=github&logoColor=white)](https://secret-gaming01.github.io/tournechec/)
-[![Statut](https://img.shields.io/badge/Statut-En%20ligne-success?style=for-the-badge)](https://secret-gaming01.github.io/tournechec/)
+[![Site en ligne](https://img.shields.io/badge/Site-tournechec-2f54eb?style=for-the-badge&logo=github&logoColor=white)](https://secret-gaming01.github.io/Tournechec/)
+[![Statut](https://img.shields.io/badge/Statut-En%20ligne-success?style=for-the-badge)](https://secret-gaming01.github.io/Tournechec/)
 
-### Accéder au site : https://secret-gaming01.github.io/tournechec/
+### Accéder au site : https://secret-gaming01.github.io/Tournechec/
 
 </div>
 
@@ -64,6 +64,6 @@ tournechec/
 
 Développé par [secret_gaming01](https://github.com/Secret-gaming01) · [Twitch](https://www.twitch.tv/secret_gaming01) · [Portfolio](https://secret-gaming01.github.io/portfolio/)
 
-[Mentions légales](https://secret-gaming01.github.io/tournechec/mentions-legales.html) · [Confidentialité](https://secret-gaming01.github.io/tournechec/confidentialite.html) · [Aide](https://secret-gaming01.github.io/tournechec/aide.html)
+[Mentions légales](https://secret-gaming01.github.io/Tournechec/mentions-legales.html) · [Confidentialité](https://secret-gaming01.github.io/Tournechec/confidentialite.html) · [Aide](https://secret-gaming01.github.io/Tournechec/aide.html)
 
 </div>
