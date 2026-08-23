@@ -1,4 +1,4 @@
 window.TOURNECHEC_CONFIG = {
-  SUPABASE_URL: "REMPLACE_MOI_PAR_L_URL_DE_TON_PROJET.supabase.co",
-  SUPABASE_ANON_KEY: "REMPLACE_MOI_PAR_TA_CLE_PUBLIQUE_anon",
+  SUPABASE_URL: "https://tidrusxpttljbrbufjhh.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_eAqOIxCRb32JP-GZjRDaQg_28iLy9ct",
 };
