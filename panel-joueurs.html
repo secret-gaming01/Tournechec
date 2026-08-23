@@ -131,13 +131,14 @@
         sb.innerHTML = '<p class="muted small">Aucun participant.</p>';
       } else {
         sb.innerHTML = `<div class="table-wrap"><table class="data">
-          <thead><tr><th>Rang</th><th>Joueur</th><th>Elo</th><th>Points</th><th>V</th><th>N</th><th>D</th></tr></thead>
+          <thead><tr><th>Rang</th><th>Joueur</th><th>Elo</th><th>Points</th><th>Départ.</th><th>V</th><th>N</th><th>D</th></tr></thead>
           <tbody>${detail.standings.map((s, i) => `
             <tr${me && s.id === me.id ? ' style="background:#f4f8ff;"' : ""}>
               <td><strong>${i + 1}</strong></td>
               <td>${escapeHtml(s.name)}</td>
               <td>${s.elo}</td>
               <td><strong>${s.points}</strong></td>
+              <td class="muted">${s.buchholz != null ? s.buchholz : "—"}</td>
               <td>${s.wins}</td><td>${s.draws}</td><td>${s.losses}</td>
             </tr>`).join("")}</tbody></table></div>`;
       }
@@ -156,6 +157,13 @@
     }
 
     load();
+    setInterval(async () => {
+      if (document.hidden) return;
+      try {
+        detail = await api("/tournaments/" + tid);
+        render();
+      } catch {}
+    }, 20000);
   </script>
 </body>
 </html>

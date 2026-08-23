@@ -25,6 +25,22 @@
     </div>
 
     <div class="container">
+      <div class="flex-gap mb-3" style="flex-wrap:wrap;align-items:flex-end;">
+        <div class="field" style="flex:1;min-width:220px;margin:0;">
+          <label for="t-search">Rechercher</label>
+          <input type="text" id="t-search" placeholder="Nom du tournoi ou lieu...">
+        </div>
+        <div class="field" style="margin:0;min-width:200px;">
+          <label for="t-filter">Statut</label>
+          <select id="t-filter">
+            <option value="">Tous les statuts</option>
+            <option value="publie">Inscriptions ouvertes</option>
+            <option value="en_cours">En cours</option>
+            <option value="termine">Terminés</option>
+          </select>
+        </div>
+      </div>
+
       <div id="tournaments-grid" class="grid grid-auto">
         <p class="muted">Chargement des tournois...</p>
       </div>
@@ -70,13 +86,29 @@
     let selected = null;
     let me = null;
 
+    function getFiltered() {
+      const qv = document.getElementById("t-search").value.trim().toLowerCase();
+      const st = document.getElementById("t-filter").value;
+      return tournaments.filter((t) =>
+        (!qv || (t.name || "").toLowerCase().includes(qv) || (t.location || "").toLowerCase().includes(qv)) &&
+        (!st || t.status === st)
+      );
+    }
+
     function renderList() {
       const grid = document.getElementById("tournaments-grid");
+      const infoBox = document.querySelector(".alert-info");
       if (!tournaments.length) {
         grid.innerHTML = "";
+        infoBox.hidden = false;
         return;
       }
-      grid.innerHTML = tournaments.map((t) => `
+      const list = getFiltered();
+      if (!list.length) {
+        grid.innerHTML = '<div class="empty-state"><strong>Aucun résultat</strong>Essaie un autre nom, lieu ou statut.</div>';
+        return;
+      }
+      grid.innerHTML = list.map((t) => `
         <article class="card hover tournament-card reveal visible" data-id="${t.id}" tabindex="0" role="button">
           <div class="t-head">
             <h3>${escapeHtml(t.name)}</h3>
@@ -90,8 +122,11 @@
           <p class="t-desc">${escapeHtml(t.description || "Aucune description fournie.")}</p>
           <div class="muted small">${escapeHtml(t.location || "Lieu à confirmer")} · ${escapeHtml(t.start_date || "Date à confirmer")}</div>
         </article>`).join("");
-      document.querySelector(".alert-info").hidden = true;
+      infoBox.hidden = true;
     }
+
+    document.getElementById("t-search").addEventListener("input", renderList);
+    document.getElementById("t-filter").addEventListener("change", renderList);
 
     async function load() {
       try {
@@ -126,7 +161,7 @@
       btn.style.display = canJoin ? "" : "none";
       document.getElementById("join-note").style.display = canJoin ? "" : "block";
       document.getElementById("join-note").textContent = me
-        ? "Un courriel de confirmation te sera envoyé automatiquement."
+        ? "Une notification de confirmation arrivera dans ton espace Tournechec."
         : "Connecte-toi d'abord pour pouvoir t'inscrire.";
       openModal("tournament-modal");
     }
@@ -158,7 +193,7 @@
       try {
         await api(`/tournaments/${selected.id}/join`, { method: "POST", body: { accept_rules: true } });
         closeModal("tournament-modal");
-        toast(`Inscription confirmée pour « ${selected.name} » ! Vérifie tes courriels.`, "ok");
+        toast(`Inscription confirmée pour « ${selected.name} » ! Retrouve les détails dans ton espace.`, "ok");
         await load();
       } catch (err) {
         const box = document.getElementById("join-error");

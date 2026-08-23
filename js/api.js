@@ -135,6 +135,7 @@
 
   function computeStandings(players, history) {
     const map = new Map();
+    const opponents = new Map();
     for (const p of players) {
       map.set(p.id, { id: p.id, name: p.name, elo: p.elo, points: 0, wins: 0, draws: 0, losses: 0, played: 0 });
     }
@@ -148,12 +149,24 @@
       const b = map.get(m.black_id);
       if (!w || !b) continue;
       w.played += 1; b.played += 1;
+      if (!opponents.has(w.id)) opponents.set(w.id, []);
+      if (!opponents.has(b.id)) opponents.set(b.id, []);
+      opponents.get(w.id).push(b.id);
+      opponents.get(b.id).push(w.id);
       if (m.result === "1-0") { w.points += 1; w.wins += 1; b.losses += 1; }
       else if (m.result === "0-1") { b.points += 1; b.wins += 1; w.losses += 1; }
       else if (m.result === "1/2") { w.points += 0.5; b.points += 0.5; w.draws += 1; b.draws += 1; }
     }
+    for (const row of map.values()) {
+      let bz = 0;
+      for (const oid of opponents.get(row.id) || []) {
+        const o = map.get(oid);
+        if (o) bz += o.points;
+      }
+      row.buchholz = Math.round(bz * 10) / 10;
+    }
     return Array.from(map.values()).sort(
-      (a, b) => b.points - a.points || b.elo - a.elo || a.name.localeCompare(b.name)
+      (a, b) => b.points - a.points || b.buchholz - a.buchholz || b.elo - a.elo || a.name.localeCompare(b.name)
     );
   }
 

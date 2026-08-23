@@ -108,7 +108,10 @@
             </div>
 
             <div class="card" style="box-shadow:none;">
-              <h4 class="mb-2">Joueurs inscrits (<span id="players-count"></span>)</h4>
+              <div class="flex-between mb-2">
+                <h4>Joueurs inscrits (<span id="players-count"></span>)</h4>
+                <button class="btn btn-outline btn-sm" id="export-csv-btn" title="Télécharge la liste au format CSV (ouvrable dans Excel)">Exporter en CSV</button>
+              </div>
               <div class="table-wrap"><table class="data" id="players-table">
                 <thead><tr><th>Nom</th><th>Elo</th><th>Année</th><th>Modifier l'Elo</th><th></th></tr></thead>
                 <tbody></tbody>
@@ -333,6 +336,22 @@
         errBox.textContent = err.message;
         errBox.hidden = false;
       }
+    });
+
+    document.getElementById("export-csv-btn").addEventListener("click", () => {
+      const rows = [["Nom", "Courriel", "Elo", "Annee scolaire", "Present"]];
+      for (const p of detail.participants) {
+        rows.push([p.name, p.email, p.elo, p.school_year || "", p.present ? "oui" : "non"]);
+      }
+      const csv = "\uFEFF" + rows.map((r) => r.map((c) => '"' + String(c).replace(/"/g, '""') + '"').join(";")).join("\r\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "participants-" + String(detail.tournament.name).replace(/[^a-z0-9]+/gi, "-").toLowerCase() + ".csv";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      toast("Liste exportée en CSV.", "ok");
     });
 
     function renderParticipants() {
