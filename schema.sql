@@ -59,8 +59,8 @@ create table if not exists public.matches (
   id bigint generated always as identity primary key,
   round_id bigint not null references public.rounds(id) on delete cascade,
   table_number int not null,
-  white_id uuid references public.profiles(id) on delete set null,
-  black_id uuid references public.profiles(id) on delete set null,
+  white_id uuid,
+  black_id uuid,
   result text check (result in ('1-0', '0-1', '1/2', 'bye') or result is null),
   constraint matches_white_id_fkey foreign key (white_id) references public.profiles(id) on delete set null,
   constraint matches_black_id_fkey foreign key (black_id) references public.profiles(id) on delete set null
