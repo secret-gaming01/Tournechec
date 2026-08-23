@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Page introuvable · Tournechec</title>
   <meta name="robots" content="noindex">
-  <link rel="icon" type="image/svg+xml" href="/Tournechec/media/images/logo.svg">
+  <link rel="icon" type="image/svg+xml" href="media/images/logo.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@600;700;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -23,12 +23,24 @@
 </head>
 <body>
   <div class="box">
-    <img class="logo" src="/Tournechec/media/images/logo.svg" alt="">
+    <img class="logo" id="logo404" src="media/images/logo.svg" alt="">
     <div class="code">404</div>
     <h1>Échec et mat... cette page n'existe pas !</h1>
     <p>Le lien est peut-être incorrect ou la page a été déplacée. Retourne à l'accueil pour retrouver tes tournois.</p>
-    <a class="btn primary" href="/Tournechec/accueil.html">Retour à l'accueil</a>
-    <a class="btn ghost" href="/Tournechec/aide.html">Page d'aide</a>
+    <a class="btn primary" id="home404" href="accueil.html">Retour à l'accueil</a>
+    <a class="btn ghost" id="aide404" href="aide.html">Page d'aide</a>
   </div>
+  <script>
+    (function () {
+      if (window.location.protocol === "file:") return;
+      const seg = window.location.pathname.split("/");
+      if (seg.length > 2 && seg[1]) {
+        const root = "/" + seg[1] + "/";
+        document.getElementById("logo404").src = root + "media/images/logo.svg";
+        document.getElementById("home404").href = root + "accueil.html";
+        document.getElementById("aide404").href = root + "aide.html";
+      }
+    })();
+  </script>
 </body>
 </html>
