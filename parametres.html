@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paramètres · Tournechec</title>
+  <meta name="description" content="Modifie tes informations personnelles, ton courriel, ton Elo et ton mot de passe.">
+  <link rel="icon" type="image/svg+xml" href="media/images/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/general.css">
+  <link rel="stylesheet" href="styles/header.css">
+  <link rel="stylesheet" href="styles/bottom.css">
+  <link rel="stylesheet" href="styles/pages.css">
+</head>
+<body data-page="parametres" data-auth="required">
+  <div id="site-header"></div>
+
+  <main class="section-tight">
+    <div class="container section-head center">
+      <span class="kicker">Mon compte</span>
+      <h1>Paramètres</h1>
+      <p>Modifie toutes tes informations. Ton mot de passe actuel est demandé pour les changements sensibles.</p>
+    </div>
+
+    <div class="container grid grid-2" style="max-width:960px;align-items:start;">
+      <form id="profile-form" class="card reveal" novalidate>
+        <h3 class="mb-2">Mes informations</h3>
+        <div class="field">
+          <label for="p-name">Nom complet</label>
+          <input type="text" id="p-name" name="name" maxlength="80" required>
+        </div>
+        <div class="field">
+          <label for="p-email">Adresse courriel</label>
+          <input type="email" id="p-email" name="email" maxlength="120">
+          <div class="hint">Le changer demande ton mot de passe actuel.</div>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label for="p-year">Année scolaire</label>
+            <select id="p-year" name="school_year">
+              <option value="">— Choisir —</option>
+              <option>1re secondaire</option>
+              <option>2e secondaire</option>
+              <option>3e secondaire</option>
+              <option>4e secondaire</option>
+              <option>5e secondaire</option>
+              <option>Collégial / Cégep</option>
+              <option>Universitaire</option>
+              <option>Autre / Adulte</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="p-elo">Elo</label>
+            <input type="number" id="p-elo" name="elo" min="0" max="3500">
+          </div>
+        </div>
+        <div class="field">
+          <label for="p-current">Mot de passe actuel (pour confirmer le courriel)</label>
+          <input type="password" id="p-current" name="current_password" autocomplete="current-password">
+        </div>
+        <div class="alert alert-error" id="profile-error" hidden></div>
+        <button class="btn btn-primary btn-block" type="submit">Enregistrer mes informations</button>
+      </form>
+
+      <div class="reveal reveal-delay-1">
+        <form id="password-form" class="card mb-2" novalidate>
+          <h3 class="mb-2">Changer mon mot de passe</h3>
+          <div class="field">
+            <label for="pw-current">Mot de passe actuel</label>
+            <input type="password" id="pw-current" name="current_password" required autocomplete="current-password">
+          </div>
+          <div class="field">
+            <label for="pw-new">Nouveau mot de passe</label>
+            <input type="password" id="pw-new" name="new_password" minlength="8" required autocomplete="new-password">
+            <div class="hint">8 caractères minimum.</div>
+          </div>
+          <div class="alert alert-error" id="password-error" hidden></div>
+          <button class="btn btn-outline btn-block" type="submit">Changer le mot de passe</button>
+        </form>
+
+        <form id="delete-form" class="card" novalidate style="border-color:#fecaca;">
+          <h3 class="mb-2" style="color:var(--danger);">Supprimer mon compte</h3>
+          <p class="muted small mb-2">Action irréversible : tes inscriptions aux tournois seront annulées.</p>
+          <div class="field">
+            <label for="del-pass">Mot de passe actuel</label>
+            <input type="password" id="del-pass" name="password" required autocomplete="current-password">
+          </div>
+          <button class="btn btn-danger btn-block" type="submit">Supprimer définitivement</button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/navigation.js"></script>
+  <script>
+    let me = null;
+
+    document.addEventListener("tc:user", async (e) => {
+      if (!e.detail) return;
+      if (me) return;
+      const fresh = await api("/me").catch(() => null);
+      me = fresh && fresh.user;
+      if (!me) return;
+      document.getElementById("p-name").value = me.name || "";
+      document.getElementById("p-email").value = me.email || "";
+      document.getElementById("p-year").value = me.school_year || "";
+      document.getElementById("p-elo").value = me.elo;
+    });
+
+    document.getElementById("profile-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const errBox = document.getElementById("profile-error");
+      errBox.hidden = true;
+      try {
+        await api("/profile", { method: "PUT", body: formValues(e.target) });
+        toast("Informations mises à jour !", "ok");
+        setTimeout(() => window.location.reload(), 800);
+      } catch (err) {
+        errBox.textContent = err.message;
+        errBox.hidden = false;
+      }
+    });
+
+    document.getElementById("password-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const errBox = document.getElementById("password-error");
+      errBox.hidden = true;
+      try {
+        await api("/profile", { method: "PUT", body: formValues(e.target) });
+        toast("Mot de passe changé avec succès !", "ok");
+        setTimeout(() => window.location.reload(), 900);
+      } catch (err) {
+        errBox.textContent = err.message;
+        errBox.hidden = false;
+      }
+    });
+
+    document.getElementById("delete-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!confirmAction("Supprimer ton compte est irréversible.")) return;
+      try {
+        await api("/account", { method: "DELETE", body: formValues(e.target) });
+        window.location.href = "accueil.html";
+      } catch (err) {
+        toast(err.message, "err");
+      }
+    });
+  </script>
+</body>
+</html>

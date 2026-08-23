@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel joueurs · Tournechec</title>
+  <meta name="description" content="Consulte tes tables, ton adversaire et ta couleur pour chaque ronde du tournoi.">
+  <link rel="icon" type="image/svg+xml" href="media/images/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/general.css">
+  <link rel="stylesheet" href="styles/header.css">
+  <link rel="stylesheet" href="styles/bottom.css">
+  <link rel="stylesheet" href="styles/pages.css">
+</head>
+<body data-page="panel-joueurs" data-auth="required">
+  <div id="site-header"></div>
+
+  <main class="section-tight">
+    <div class="container">
+      <div id="tournament-head"></div>
+
+      <div class="grid grid-3 mb-3" id="info-cards"></div>
+
+      <div class="card mb-3 reveal visible">
+        <div class="flex-between mb-2">
+          <h3>Mes rondes et mes tables</h3>
+          <button class="btn btn-outline btn-sm" onclick="location.reload()">Rafraîchir</button>
+        </div>
+        <div id="my-rounds"><p class="muted small">Chargement...</p></div>
+      </div>
+
+      <div class="card reveal visible">
+        <h3 class="mb-2">Classement en direct</h3>
+        <div id="standings-box"></div>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/navigation.js"></script>
+  <script>
+    const tid = qsParam("tournoi");
+    const STATUS_LABEL = { brouillon: "Brouillon", publie: "Publié", en_cours: "En cours", termine: "Terminé" };
+    let me = null;
+    let detail = null;
+
+    if (!tid) {
+      document.body.innerHTML = '<div style="padding:80px;text-align:center;font-family:sans-serif;"><h2>Tournoi non précisé</h2><p><a href="mes-tournois.html">Retour à mes tournois</a></p></div>';
+    }
+
+    function myMatchInfo(round) {
+      if (!me) return null;
+      return round.matches.find((m) => (m.white && m.white.id === me.id) || (m.black && m.black.id === me.id)) || null;
+    }
+
+    function render() {
+      const t = detail.tournament;
+      document.title = t.name + " · Panel joueurs · Tournechec";
+      document.getElementById("tournament-head").innerHTML = `
+        <div class="flex-between mb-3 reveal visible">
+          <div>
+            <span class="kicker">Panel joueur</span>
+            <h1 style="font-size:clamp(1.5rem,3vw,2rem);">${escapeHtml(t.name)}</h1>
+            <p class="muted small">${escapeHtml(t.location || "")} ${t.start_date ? "· " + escapeHtml(t.start_date) : ""}</p>
+          </div>
+          <div class="flex-gap">
+            <span class="badge status-${t.status}">${STATUS_LABEL[t.status] || t.status}</span>
+            <a class="btn btn-outline btn-sm" href="panel-projecteur.html?tournoi=${t.id}" target="_blank">Voir le projecteur</a>
+          </div>
+        </div>`;
+
+      const infoCards = [
+        ["Format", t.format === "elimination" ? "Élimination directe (pyramide)" : "Système suisse"],
+        ["Ronde actuelle", t.current_round > 0 ? "Ronde " + t.current_round : "Tables pas encore générées"],
+        ["Participants", String(detail.participants.length)],
+      ];
+      document.getElementById("info-cards").innerHTML = infoCards.map(
+        ([label, value]) => `<div class="card text-center reveal visible"><div class="muted small">${label}</div><strong style="font-family:var(--font-title);font-size:1.25rem;">${escapeHtml(value)}</strong></div>`
+      ).join("");
+
+      const box = document.getElementById("my-rounds");
+      if (!detail.rounds.length) {
+        box.innerHTML = '<div class="empty-state"><strong>Aucune table pour l\'instant</strong>L\'arbitre n\u2019a pas encore généré les tables. Reviens après la publication !</div>';
+      } else {
+        box.innerHTML = detail.rounds.map((round) => {
+          const mine = myMatchInfo(round);
+          let content;
+          if (!mine) {
+            content = '<div class="empty-state" style="padding:20px;">Tu ne joues pas cette ronde (absence ou exemption).</div>';
+          } else if (mine.white && !mine.black) {
+            content = '<div class="alert alert-info" style="margin-bottom:0;">Exempt (bye) cette ronde : tu reçois automatiquement le point.</div>';
+          } else {
+            const iAmWhite = mine.white && mine.white.id === me.id;
+            const opponent = iAmWhite ? mine.black : mine.white;
+            const myColor = iAmWhite
+              ? '<span class="color-dot color-w"></span> Blancs'
+              : '<span class="color-dot color-b"></span> Noirs';
+            const oppColor = iAmWhite
+              ? '<span class="color-dot color-b"></span> Noirs'
+              : '<span class="color-dot color-w"></span> Blancs';
+            let verdict = "";
+            if (mine.result === "1-0") verdict = iAmWhite ? "Victoire !" : "Défaite";
+            else if (mine.result === "0-1") verdict = iAmWhite ? "Défaite" : "Victoire !";
+            else if (mine.result === "1/2") verdict = "Partie nulle";
+            content = `
+              <div class="match-row" style="margin-bottom:8px;">
+                <div class="table-chip">Table<br>${mine.table_number}</div>
+                <div class="vs-line">
+                  <span>${escapeHtml(mine.white.name)} <small class="muted">(${mine.white.elo})</small></span>
+                  <span class="muted">contre</span>
+                  <span>${escapeHtml(mine.black.name)} <small class="muted">(${mine.black.elo})</small></span>
+                </div>
+                <div class="small bold">${myColor}</div>
+                <div class="small muted">Adversaire : ${oppColor}</div>
+                <div>${verdict ? `<span class="badge ${verdict.startsWith("Vict") ? "badge-green" : verdict === "Partie nulle" ? "badge-amber" : "badge-red"}">${verdict}</span>` : '<span class="badge badge-gray">À jouer</span>'}</div>
+              </div>`;
+          }
+          return `<div class="round-banner">Ronde ${round.round_number}<span class="muted small">${round.matches.filter((m) => m.result).length}/${round.matches.length} parties pointées</span></div>${content}`;
+        }).join("");
+      }
+
+      const sb = document.getElementById("standings-box");
+      if (!detail.standings.length) {
+        sb.innerHTML = '<p class="muted small">Aucun participant.</p>';
+      } else {
+        sb.innerHTML = `<div class="table-wrap"><table class="data">
+          <thead><tr><th>Rang</th><th>Joueur</th><th>Elo</th><th>Points</th><th>V</th><th>N</th><th>D</th></tr></thead>
+          <tbody>${detail.standings.map((s, i) => `
+            <tr${me && s.id === me.id ? ' style="background:#f4f8ff;"' : ""}>
+              <td><strong>${i + 1}</strong></td>
+              <td>${escapeHtml(s.name)}</td>
+              <td>${s.elo}</td>
+              <td><strong>${s.points}</strong></td>
+              <td>${s.wins}</td><td>${s.draws}</td><td>${s.losses}</td>
+            </tr>`).join("")}</tbody></table></div>`;
+      }
+    }
+
+    async function load() {
+      try {
+        const meRes = await api("/me");
+        me = meRes.user;
+        detail = await api("/tournaments/" + tid);
+        render();
+      } catch (err) {
+        toast(err.message, "err");
+        setTimeout(() => (window.location.href = "mes-tournois.html"), 1200);
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>

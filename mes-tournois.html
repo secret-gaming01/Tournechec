@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mes tournois · Tournechec</title>
+  <meta name="description" content="Tous les tournois où tu es joueur ou arbitre, clairement séparés.">
+  <link rel="icon" type="image/svg+xml" href="media/images/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/general.css">
+  <link rel="stylesheet" href="styles/header.css">
+  <link rel="stylesheet" href="styles/bottom.css">
+  <link rel="stylesheet" href="styles/pages.css">
+</head>
+<body data-page="mes-tournois" data-auth="required">
+  <div id="site-header"></div>
+
+  <main class="section-tight">
+    <div class="container section-head">
+      <span class="kicker">Ma participation</span>
+      <h1>Mes tournois</h1>
+      <p>Tes tournois sont séparés en deux sections pour que tout soit clair : ceux où tu joues et ceux où tu arbitres.</p>
+    </div>
+
+    <div class="container">
+      <div class="section-tight" style="padding-top:8px;">
+        <div class="flex-between mb-2">
+          <h2 style="font-size:1.3rem;display:flex;align-items:center;gap:10px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2456e6" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></svg>
+            En tant que joueur
+          </h2>
+        </div>
+        <div id="list-joueur"><p class="muted small">Chargement...</p></div>
+      </div>
+
+      <div class="section-tight" style="padding-top:0;">
+        <div class="flex-between mb-2">
+          <h2 style="font-size:1.3rem;display:flex;align-items:center;gap:10px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round"><path d="M12 22s8-3 8-10V5l-8-3-8 3v7c0 7 8 10 8 10z"/></svg>
+            En tant qu'arbitre
+          </h2>
+        </div>
+        <div id="list-arbitre"><p class="muted small">Chargement...</p></div>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/navigation.js"></script>
+  <script>
+    const STATUS_LABEL = { brouillon: "Brouillon", publie: "Publié", en_cours: "En cours", termine: "Terminé" };
+
+    function tournamentRow(t, panelHref, panelLabel) {
+      return `
+        <div class="presence-row">
+          <div style="min-width:220px;">
+            <strong>${escapeHtml(t.name)}</strong>
+            <div class="muted small">${escapeHtml(t.location || "Lieu à confirmer")} · ${escapeHtml(t.start_date || "Date à confirmer")}</div>
+          </div>
+          <div class="flex-gap">
+            <span class="badge status-${t.status}">${STATUS_LABEL[t.status] || t.status}</span>
+            ${t.public ? '<span class="badge badge-gray">Public</span>' : '<span class="badge badge-violet">Privé</span>'}
+            <span class="badge ${t.format === "elimination" ? "badge-amber" : "badge-green"}">${t.format === "elimination" ? "Élimination" : "Suisse"}</span>
+            ${t.champion ? `<span class="badge badge-blue">Champion : ${escapeHtml(t.champion)}</span>` : ""}
+            <a class="btn btn-primary btn-sm" href="${panelHref}">${panelLabel}</a>
+            <a class="btn btn-outline btn-sm" href="panel-projecteur.html?tournoi=${t.id}" target="_blank">Projecteur</a>
+          </div>
+        </div>`;
+    }
+
+    async function load() {
+      try {
+        const data = await api("/my-tournaments");
+        const jBox = document.getElementById("list-joueur");
+        const aBox = document.getElementById("list-arbitre");
+
+        jBox.innerHTML = data.joueur.length
+          ? `<div class="table-wrap">${data.joueur.map((t) => tournamentRow(t, `panel-joueurs.html?tournoi=${t.id}`, "Mes tables")).join("")}</div>`
+          : '<div class="empty-state"><strong>Aucun tournoi en tant que joueur</strong><a href="s-inscrire-a-un-tournoi.html">Trouve un tournoi ici</a></div>';
+
+        aBox.innerHTML = data.arbitre.length
+          ? `<div class="table-wrap">${data.arbitre.map((t) => tournamentRow(t, `panel-arbitres.html?tournoi=${t.id}`, "Panel arbitre")).join("")}</div>`
+          : '<div class="empty-state"><strong>Aucun tournoi en tant qu\u2019arbitre</strong><a href="creer-un-tournoi.html">Crée ton premier tournoi</a></div>';
+      } catch (err) {
+        toast(err.message, "err");
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>

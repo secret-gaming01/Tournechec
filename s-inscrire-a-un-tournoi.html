@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>S'inscrire à un tournoi · Tournechec</title>
+  <meta name="description" content="Découvre les tournois d'échecs ouverts aux inscriptions et rejoins celui qui te convient.">
+  <link rel="icon" type="image/svg+xml" href="media/images/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/general.css">
+  <link rel="stylesheet" href="styles/header.css">
+  <link rel="stylesheet" href="styles/bottom.css">
+  <link rel="stylesheet" href="styles/pages.css">
+</head>
+<body data-page="s-inscrire-a-un-tournoi">
+  <div id="site-header"></div>
+
+  <main class="section-tight">
+    <div class="container section-head center">
+      <span class="kicker">Tournois ouverts</span>
+      <h1>S'inscrire à un tournoi</h1>
+      <p>Clique sur un tournoi pour voir sa description, son lieu, ses dates et ses règlements avant de t'inscrire.</p>
+    </div>
+
+    <div class="container">
+      <div id="tournaments-grid" class="grid grid-auto">
+        <p class="muted">Chargement des tournois...</p>
+      </div>
+
+      <div class="alert alert-info mt-3">Tu ne vois rien ? Aucun tournoi public n'est ouvert pour l'instant : reviens bientôt ou crée le tien !</div>
+    </div>
+  </main>
+
+  <div class="modal-overlay" id="tournament-modal">
+    <div class="modal" role="dialog" aria-modal="true">
+      <button class="modal-close" data-close-modal aria-label="Fermer">×</button>
+      <h3 id="modal-name" style="font-size:1.4rem;margin-bottom:6px;"></h3>
+      <div class="flex-gap mb-2" id="modal-badges"></div>
+      <div id="modal-desc" class="muted mb-2"></div>
+      <div class="grid grid-2 small mb-2" style="gap:8px;">
+        <div><strong>Lieu :</strong> <span id="modal-location"></span></div>
+        <div><strong>Format :</strong> <span id="modal-format"></span></div>
+        <div><strong>Début :</strong> <span id="modal-start"></span></div>
+        <div><strong>Fin :</strong> <span id="modal-end"></span></div>
+      </div>
+      <h4 class="mt-2 mb-1">Règlements du tournoi</h4>
+      <div class="rules-box mb-2" id="modal-rules"></div>
+      <label class="checkbox-line mb-2">
+        <input type="checkbox" id="accept-rules">
+        <span>J'ai lu et j'accepte les règlements ci-dessus.</span>
+      </label>
+      <div class="alert alert-error" id="join-error" hidden></div>
+      <button class="btn btn-primary btn-block btn-lg" id="join-btn" disabled>M'inscrire au tournoi</button>
+      <p class="small muted text-center mt-1" id="join-note">Connecte-toi d'abord pour pouvoir t'inscrire.</p>
+    </div>
+  </div>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/navigation.js"></script>
+  <script>
+    const STATUS_LABEL = { brouillon: "Brouillon", publie: "Inscriptions ouvertes", en_cours: "En cours", termine: "Terminé" };
+    let tournaments = [];
+    let selected = null;
+    let me = null;
+
+    function renderList() {
+      const grid = document.getElementById("tournaments-grid");
+      if (!tournaments.length) {
+        grid.innerHTML = "";
+        return;
+      }
+      grid.innerHTML = tournaments.map((t) => `
+        <article class="card hover tournament-card reveal visible" data-id="${t.id}" tabindex="0" role="button">
+          <div class="t-head">
+            <h3>${escapeHtml(t.name)}</h3>
+            <span class="badge ${t.public ? "badge-blue" : "badge-violet"}">${t.public ? "Public" : "Privé"}</span>
+          </div>
+          <div class="t-meta">
+            <span class="badge status-${t.status}">${STATUS_LABEL[t.status] || t.status}</span>
+            <span class="badge badge-gray">${t.participants} inscrit${t.participants > 1 ? "s" : ""}</span>
+            ${t.format === "elimination" ? '<span class="badge badge-amber">Élimination</span>' : '<span class="badge badge-green">Suisse</span>'}
+          </div>
+          <p class="t-desc">${escapeHtml(t.description || "Aucune description fournie.")}</p>
+          <div class="muted small">${escapeHtml(t.location || "Lieu à confirmer")} · ${escapeHtml(t.start_date || "Date à confirmer")}</div>
+        </article>`).join("");
+      document.querySelector(".alert-info").hidden = true;
+    }
+
+    async function load() {
+      try {
+        const data = await api("/tournaments");
+        tournaments = data.tournaments || [];
+        me = data.user;
+        renderList();
+      } catch (err) {
+        toast(err.message, "err");
+      }
+    }
+
+    function openDetails(id) {
+      const t = tournaments.find((x) => String(x.id) === String(id));
+      if (!t) return;
+      selected = t;
+      document.getElementById("modal-name").textContent = t.name;
+      document.getElementById("modal-badges").innerHTML =
+        `<span class="badge status-${t.status}">${STATUS_LABEL[t.status] || t.status}</span>` +
+        `<span class="badge badge-gray">${t.participants} participant${t.participants > 1 ? "s" : ""}</span>`;
+      document.getElementById("modal-desc").textContent = t.description || "";
+      document.getElementById("modal-location").textContent = t.location || "À confirmer";
+      document.getElementById("modal-format").textContent = t.format === "elimination" ? "Élimination directe" : "Système suisse";
+      document.getElementById("modal-start").textContent = t.start_date || "À confirmer";
+      document.getElementById("modal-end").textContent = t.end_date || "À confirmer";
+      document.getElementById("modal-rules").textContent = t.rules || "Les règlements seront communiqués par l'arbitre.";
+      const checkbox = document.getElementById("accept-rules");
+      const btn = document.getElementById("join-btn");
+      checkbox.checked = false;
+      btn.disabled = true;
+      const canJoin = me && t.status !== "termine";
+      btn.style.display = canJoin ? "" : "none";
+      document.getElementById("join-note").style.display = canJoin ? "" : "block";
+      document.getElementById("join-note").textContent = me
+        ? "Un courriel de confirmation te sera envoyé automatiquement."
+        : "Connecte-toi d'abord pour pouvoir t'inscrire.";
+      openModal("tournament-modal");
+    }
+
+    document.addEventListener("click", (e) => {
+      const card = e.target.closest(".tournament-card");
+      if (card) openDetails(card.dataset.id);
+    });
+    document.addEventListener("keydown", (e) => {
+      if ((e.key === "Enter" || e.key === " ") && e.target.classList && e.target.classList.contains("tournament-card")) {
+        e.preventDefault();
+        openDetails(e.target.dataset.id);
+      }
+    });
+
+    document.getElementById("accept-rules").addEventListener("change", (e) => {
+      document.getElementById("join-btn").disabled = !e.target.checked;
+    });
+
+    document.getElementById("join-btn").addEventListener("click", async () => {
+      if (!selected) return;
+      if (!me) {
+        window.location.href = "se-connecter.html?next=s-inscrire-a-un-tournoi.html";
+        return;
+      }
+      const btn = document.getElementById("join-btn");
+      btn.disabled = true;
+      btn.textContent = "Inscription en cours...";
+      try {
+        await api(`/tournaments/${selected.id}/join`, { method: "POST", body: { accept_rules: true } });
+        closeModal("tournament-modal");
+        toast(`Inscription confirmée pour « ${selected.name} » ! Vérifie tes courriels.`, "ok");
+        await load();
+      } catch (err) {
+        const box = document.getElementById("join-error");
+        box.textContent = err.message;
+        box.hidden = false;
+        btn.disabled = false;
+      } finally {
+        btn.textContent = "M'inscrire au tournoi";
+      }
+    });
+
+    load();
+  </script>
+</body>
+</html>

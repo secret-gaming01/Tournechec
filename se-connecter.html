@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Se connecter · Tournechec</title>
+  <meta name="description" content="Connecte-toi à ton compte Tournechec.">
+  <link rel="icon" type="image/svg+xml" href="media/images/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/general.css">
+  <link rel="stylesheet" href="styles/header.css">
+  <link rel="stylesheet" href="styles/bottom.css">
+  <link rel="stylesheet" href="styles/pages.css">
+</head>
+<body data-page="se-connecter">
+  <div id="site-header"></div>
+
+  <main class="section-tight">
+    <div class="container section-head center">
+      <span class="kicker">Content de te revoir</span>
+      <h1>Se connecter</h1>
+      <p>Retrouve tes tournois, tes tables et tes résultats.</p>
+    </div>
+
+    <div class="container">
+      <form id="login-form" class="card form-card" novalidate>
+        <div class="field">
+          <label for="l-email">Adresse courriel</label>
+          <input type="email" id="l-email" name="email" required autocomplete="email" maxlength="120">
+        </div>
+        <div class="field">
+          <label for="l-password">Mot de passe</label>
+          <input type="password" id="l-password" name="password" required autocomplete="current-password">
+        </div>
+        <input type="text" name="hp_website" value="" style="position:absolute;left:-9999px;" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div class="alert alert-error" id="login-error" hidden></div>
+        <button class="btn btn-primary btn-block btn-lg" type="submit">Se connecter</button>
+        <p class="small muted text-center mt-2">Pas encore de compte ? <a href="s-inscrire.html">Inscris-toi gratuitement</a></p>
+      </form>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/navigation.js"></script>
+  <script>
+    const loginForm = document.getElementById("login-form");
+    const pageLoadedAt = Date.now();
+    let alreadyLoggedIn = false;
+
+    api("/me").then((d) => {
+      if (d.user) {
+        alreadyLoggedIn = true;
+        toast("Tu es déjà connecté !", "ok");
+        setTimeout(goNext, 600);
+      }
+    }).catch(() => {});
+
+    function goNext() {
+      const next = qsParam("next");
+      window.location.href = next && next.endsWith(".html") ? next : "interface-utilisateur.html";
+    }
+
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (alreadyLoggedIn) return goNext();
+      const errBox = document.getElementById("login-error");
+      errBox.hidden = true;
+      const btn = loginForm.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.textContent = "Vérification en cours...";
+      try {
+        await api("/login", { method: "POST", body: { ...formValues(loginForm), ts: pageLoadedAt } });
+        toast("Connexion réussie !", "ok");
+        setTimeout(goNext, 500);
+      } catch (err) {
+        errBox.textContent = err.message;
+        errBox.hidden = false;
+        btn.disabled = false;
+        btn.textContent = "Se connecter";
+      }
+    });
+  </script>
+</body>
+</html>

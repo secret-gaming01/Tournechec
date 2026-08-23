@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel admin · Tournechec</title>
+  <meta name="description" content="Administration Tournechec : utilisateurs, tournois, modération, support et statistiques.">
+  <link rel="icon" type="image/svg+xml" href="media/images/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/general.css">
+  <link rel="stylesheet" href="styles/header.css">
+  <link rel="stylesheet" href="styles/bottom.css">
+  <link rel="stylesheet" href="styles/pages.css">
+</head>
+<body data-page="panel-admin" data-auth="required" data-roles="admin">
+  <div id="site-header"></div>
+
+  <main class="section-tight">
+    <div class="container-wide">
+      <div class="flex-between mb-3 reveal visible">
+        <div>
+          <span class="kicker">Pouvoir suprême</span>
+          <h1 style="font-size:clamp(1.5rem,3vw,2rem);">Panel administrateur</h1>
+          <p class="muted small">Gestion de tout : comptes, tournois, modération, support, notifications.</p>
+        </div>
+      </div>
+
+      <div class="grid grid-auto mb-3" id="stats-box"></div>
+
+      <div class="panel-layout">
+        <aside class="panel-side reveal visible">
+          <button class="panel-tab active" data-tab="users"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></svg> Utilisateurs</button>
+          <button class="panel-tab" data-tab="tournaments"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18"/></svg> Tournois</button>
+          <button class="panel-tab" data-tab="support"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/></svg> Support</button>
+          <button class="panel-tab" data-tab="emails"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 7l8 6 8-6"/></svg> Notifications</button>
+        </aside>
+
+        <div>
+          <section class="panel-section" id="tab-users">
+            <h2>Gestion des utilisateurs</h2>
+            <p class="sub">Change un rôle, corrige des informations, bannis un compte ou supprime-le.</p>
+            <div class="field" style="max-width:360px;">
+              <input type="text" id="user-search" placeholder="Rechercher par nom ou courriel...">
+            </div>
+            <div id="users-list"><p class="muted small">Chargement...</p></div>
+          </section>
+
+          <section class="panel-section" id="tab-tournaments" hidden>
+            <h2>Tous les tournois</h2>
+            <p class="sub">Modération complète : consulte, ouvre le panel arbitre ou supprime n'importe quel tournoi.</p>
+            <div id="admin-tournaments-list"><p class="muted small">Chargement...</p></div>
+          </section>
+
+          <section class="panel-section" id="tab-support" hidden>
+            <h2>Messages de support</h2>
+            <p class="sub">Les messages envoyés depuis la page d'aide arrivent ici. Réponds par courriel, puis supprime le message traité.</p>
+            <div id="support-list"><p class="muted small">Chargement...</p></div>
+          </section>
+
+          <section class="panel-section" id="tab-emails" hidden>
+            <h2>Notifications</h2>
+            <p class="sub">Envoie une annonce à tout le monde ou à un joueur précis, et consulte le journal des notifications automatiques (tables publiées, tournois terminés...).</p>
+
+            <div class="grid grid-2 mb-3">
+              <div class="card" style="box-shadow:none;">
+                <h4 class="mb-2">Envoyer un courriel</h4>
+                <div class="field">
+                  <label for="mail-to">Destinataire</label>
+                  <select id="mail-to">
+                    <option value="all">Tous les utilisateurs actifs</option>
+                    <option value="">Adresse précise...</option>
+                  </select>
+                  <input type="email" id="mail-to-custom" placeholder="adresse@courriel.com" class="mt-1" style="display:none;">
+                </div>
+                <div class="field">
+                  <label for="mail-subject">Sujet</label>
+                  <input type="text" id="mail-subject" maxlength="150">
+                </div>
+                <div class="field">
+                  <label for="mail-body">Message</label>
+                  <textarea id="mail-body" maxlength="6000"></textarea>
+                </div>
+                <button class="btn btn-primary btn-block" id="send-mail-btn">Envoyer</button>
+              </div>
+              <div class="card" style="box-shadow:none;">
+                <h4 class="mb-2">Journal des notifications (100 dernières)</h4>
+                <div id="email-log-list" style="max-height:420px;overflow-y:auto;"></div>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/navigation.js"></script>
+  <script>
+    let usersCache = [];
+    let searchTimer = null;
+
+    async function loadStats() {
+      try {
+        const s = await api("/admin/stats");
+        document.getElementById("stats-box").innerHTML = [
+          ["Utilisateurs", s.utilisateurs],
+          ["Tournois", s.tournois],
+          ["Inscriptions", s.inscriptions],
+          ["Tables jouées", s.tables],
+          ["Messages support", s.support],
+          ["Notifications", s.courriels],
+        ].map(([label, value]) => `
+          <div class="card text-center hover reveal visible">
+            <div class="stat-num">${value}</div>
+            <div class="muted small">${label}</div>
+          </div>`).join("");
+      } catch {}
+    }
+
+    function roleBadge(role) {
+      return role === "admin"
+        ? '<span class="badge badge-red">Admin</span>'
+        : role === "arbitre"
+        ? '<span class="badge badge-violet">Arbitre</span>'
+        : '<span class="badge badge-blue">Joueur</span>';
+    }
+
+    function renderUsers(users) {
+      const box = document.getElementById("users-list");
+      if (!users.length) {
+        box.innerHTML = '<div class="empty-state"><strong>Aucun utilisateur trouvé</strong></div>';
+        return;
+      }
+      box.innerHTML = `<div class="table-wrap"><table class="data">
+        <thead><tr><th>Nom</th><th>Courriel</th><th>Elo</th><th>Rôle</th><th>Statut</th><th>Actions</th></tr></thead>
+        <tbody>${users.map((u) => `
+          <tr${u.banned ? ' style="background:#fff5f5;"' : ""}>
+            <td><strong>${escapeHtml(u.name)}</strong><div class="muted small">${escapeHtml(u.school_year || "—")}</div></td>
+            <td>${escapeHtml(u.email)}</td>
+            <td>${u.elo}</td>
+            <td>
+              <select data-role-select="${u.id}" style="width:110px;padding:6px;">
+                ${["joueur", "arbitre", "admin"].map((r) => `<option value="${r}" ${u.role === r ? "selected" : ""}>${r}</option>`).join("")}
+              </select>
+              ${roleBadge(u.role)}
+            </td>
+            <td>${u.banned ? '<span class="badge badge-red">Banni</span>' : '<span class="badge badge-green">Actif</span>'}</td>
+            <td class="flex-gap">
+              <button class="btn ${u.banned ? "btn-ok" : "btn-danger"} btn-sm" data-toggle-ban="${u.id}">${u.banned ? "Débannir" : "Bannir"}</button>
+              <button class="btn btn-outline btn-sm" data-del-user="${u.id}">Suppr.</button>
+            </td>
+          </tr>`).join("")}</tbody></table></div>`;
+    }
+
+    async function loadUsers(q) {
+      try {
+        const data = await api("/admin/users" + (q ? "?q=" + encodeURIComponent(q) : ""));
+        usersCache = data.users || [];
+        renderUsers(usersCache);
+      } catch (err) {
+        toast(err.message, "err");
+      }
+    }
+
+    document.getElementById("user-search").addEventListener("input", (e) => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => loadUsers(e.target.value.trim()), 300);
+    });
+
+    document.addEventListener("change", async (e) => {
+      const sel = e.target.closest("[data-role-select]");
+      if (!sel) return;
+      try {
+        await api("/admin/users/" + sel.dataset.roleSelect, { method: "PUT", body: { role: sel.value } });
+        toast("Rôle modifié.", "ok");
+      } catch (err) {
+        toast(err.message, "err");
+        loadUsers();
+      }
+    });
+
+    document.addEventListener("click", async (e) => {
+      const banBtn = e.target.closest("[data-toggle-ban]");
+      const delBtn = e.target.closest("[data-del-user]");
+      try {
+        if (banBtn) {
+          const u = usersCache.find((x) => x.id === Number(banBtn.dataset.toggleBan));
+          if (!confirmAction(`${u.banned ? "Débannir" : "Bannir"} ${u.name} ?`)) return;
+          await api("/admin/users/" + u.id, { method: "PUT", body: { banned: !u.banned } });
+          toast(u.banned ? "Compte débanni." : "Compte banni.", "ok");
+          loadUsers(document.getElementById("user-search").value.trim());
+          loadStats();
+        } else if (delBtn) {
+          if (!confirmAction("Supprimer définitivement ce compte ?")) return;
+          await api("/admin/users/" + delBtn.dataset.delUser, { method: "DELETE" });
+          toast("Compte supprimé.", "ok");
+          loadUsers();
+          loadStats();
+        }
+      } catch (err) {
+        toast(err.message, "err");
+      }
+    });
+
+    async function loadTournaments() {
+      try {
+        const data = await api("/tournaments");
+        const all = [...(data.tournaments || []), ...(data.prive_tournaments || [])];
+        const STATUS_LABEL = { brouillon: "Brouillon", publie: "Publié", en_cours: "En cours", termine: "Terminé" };
+        document.getElementById("admin-tournaments-list").innerHTML = all.length
+          ? `<div class="table-wrap">${all.map((t) => `
+              <div class="presence-row">
+                <div style="min-width:200px;">
+                  <strong>${escapeHtml(t.name)}</strong>
+                  <div class="muted small">${t.participants} inscrit(s) · ${escapeHtml(t.start_date || "")}</div>
+                </div>
+                <div class="flex-gap">
+                  <span class="badge status-${t.status}">${STATUS_LABEL[t.status] || t.status}</span>
+                  ${t.public ? '<span class="badge badge-gray">Public</span>' : '<span class="badge badge-violet">Privé</span>'}
+                  <a class="btn btn-primary btn-sm" href="panel-arbitres.html?tournoi=${t.id}">Gérer</a>
+                  <a class="btn btn-outline btn-sm" href="panel-projecteur.html?tournoi=${t.id}" target="_blank">Projecteur</a>
+                  <button class="btn btn-danger btn-sm" data-del-tournament="${t.id}" data-tname="${escapeHtml(t.name)}">Suppr.</button>
+                </div>
+              </div>`).join("")}</div>`
+          : '<div class="empty-state"><strong>Aucun tournoi sur la plateforme</strong></div>';
+      } catch (err) {
+        toast(err.message, "err");
+      }
+    }
+
+    document.addEventListener("click", async (e) => {
+      const delT = e.target.closest("[data-del-tournament]");
+      if (delT && confirmAction(`Supprimer le tournoi « ${delT.dataset.tname} » et toutes ses données ?`)) {
+        try {
+          await api("/tournaments/" + delT.dataset.delTournament, { method: "DELETE" });
+          toast("Tournoi supprimé.", "ok");
+          loadTournaments();
+          loadStats();
+        } catch (err) {
+          toast(err.message, "err");
+        }
+      }
+    });
+
+    async function loadSupport() {
+      try {
+        const data = await api("/admin/support");
+        const list = document.getElementById("support-list");
+        list.innerHTML = data.messages.length
+          ? `<div class="table-wrap">${data.messages.map((msg) => `
+              <div class="presence-row">
+                <div style="min-width:200px;">
+                  <strong>${escapeHtml(msg.name || "Anonyme")}</strong>
+                  <div class="muted small">${escapeHtml(msg.email)}</div>
+                  <div class="muted small">${new Date(msg.created_at).toLocaleString("fr-CA")}</div>
+                </div>
+                <div style="flex:1;min-width:200px;">${escapeHtml(msg.message)}</div>
+                <div class="flex-gap">
+                  <a class="btn btn-primary btn-sm" href="mailto:${escapeHtml(msg.email)}">Répondre</a>
+                  <button class="btn btn-danger btn-sm" data-del-support="${msg.id}">Suppr.</button>
+                </div>
+              </div>`).join("")}</div>`
+          : '<div class="empty-state"><strong>Aucun message de support</strong>La boîte de réception est vide.</div>';
+      } catch (err) {
+        toast(err.message, "err");
+      }
+    }
+
+    document.addEventListener("click", async (e) => {
+      const delS = e.target.closest("[data-del-support]");
+      if (delS && confirmAction("Supprimer ce message de support ?")) {
+        try {
+          await api("/admin/support/" + delS.dataset.delSupport, { method: "DELETE" });
+          toast("Message supprimé.", "ok");
+          loadSupport();
+          loadStats();
+        } catch (err) {
+          toast(err.message, "err");
+        }
+      }
+    });
+
+    document.getElementById("mail-to").addEventListener("change", (e) => {
+      document.getElementById("mail-to-custom").style.display = e.target.value === "" ? "block" : "none";
+    });
+
+    document.getElementById("send-mail-btn").addEventListener("click", async function () {
+      const to = document.getElementById("mail-to").value;
+      const custom = document.getElementById("mail-to-custom").value.trim();
+      const subject = document.getElementById("mail-subject").value.trim();
+      const body = document.getElementById("mail-body").value.trim();
+      if (to === "" && !custom) return toast("Entre une adresse précise.", "err");
+      if (!subject || !body) return toast("Sujet et message obligatoires.", "err");
+      this.disabled = true;
+      this.textContent = "Envoi en cours...";
+      try {
+        const res = await api("/admin/emails", { method: "POST", body: { to: to === "all" ? "all" : custom, subject, body } });
+        toast(`Courriel envoyé à ${res.envoyes} destinataire(s).`, "ok");
+        document.getElementById("mail-subject").value = "";
+        document.getElementById("mail-body").value = "";
+        loadEmailLog();
+        loadStats();
+      } catch (err) {
+        toast(err.message, "err");
+      } finally {
+        this.disabled = false;
+        this.textContent = "Envoyer";
+      }
+    });
+
+    const MAIL_STATUS_LABEL = { envoye: "Envoyé", simule: "Notification auto" };
+
+    async function loadEmailLog() {
+      try {
+        const data = await api("/admin/emails");
+        document.getElementById("email-log-list").innerHTML = data.emails.length
+          ? data.emails.map((m) => `
+            <div style="border-bottom:1px solid var(--border);padding:9px 4px;">
+              <div class="flex-between" style="gap:8px;">
+                <strong class="small" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(m.subject)}</strong>
+                <span class="badge ${m.status === "envoye" ? "badge-green" : "badge-blue"}">${MAIL_STATUS_LABEL[m.status] || m.status}</span>
+              </div>
+              <div class="muted small">→ ${escapeHtml(m.to_email)} · ${new Date(m.created_at).toLocaleString("fr-CA")}</div>
+            </div>`).join("")
+          : '<p class="muted small">Aucune notification enregistrée.</p>';
+      } catch {}
+    }
+
+    document.querySelectorAll(".panel-tab").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".panel-tab").forEach((b) => b.classList.remove("active"));
+        tab.classList.add("active");
+        document.querySelectorAll(".panel-section").forEach((s) => (s.hidden = true));
+        document.getElementById("tab-" + tab.dataset.tab).hidden = false;
+      });
+    });
+
+    loadStats();
+    loadUsers();
+    loadTournaments();
+    loadSupport();
+    loadEmailLog();
+  </script>
+</body>
+</html>

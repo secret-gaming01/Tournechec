@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel arbitres · Tournechec</title>
+  <meta name="description" content="Panel de gestion du tournoi : présences, participants, tables automatiques, pointages et publication.">
+  <link rel="icon" type="image/svg+xml" href="media/images/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/general.css">
+  <link rel="stylesheet" href="styles/header.css">
+  <link rel="stylesheet" href="styles/bottom.css">
+  <link rel="stylesheet" href="styles/pages.css">
+</head>
+<body data-page="panel-arbitres" data-auth="required">
+  <div id="site-header"></div>
+
+  <main class="section-tight">
+    <div class="container-wide">
+      <div class="flex-between mb-3 reveal visible">
+        <div>
+          <span class="kicker">Gestion du tournoi</span>
+          <h1 style="font-size:clamp(1.5rem,3vw,2rem);" id="t-title">Chargement...</h1>
+          <p class="muted small" id="t-sub"></p>
+        </div>
+        <div class="flex-gap" id="t-badges"></div>
+      </div>
+
+      <div class="alert alert-error" id="load-error" hidden></div>
+
+      <div class="panel-layout">
+        <aside class="panel-side reveal visible">
+          <button class="panel-tab active" data-tab="presence"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg> Présence</button>
+          <button class="panel-tab" data-tab="infos"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 16v-5M12 8h.01"/></svg> Infos tournoi</button>
+          <button class="panel-tab" data-tab="participants"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="4"/><path d="M1 21c0-4 3.5-6 8-6s8 2 8 6"/><path d="M19 8v6M22 11h-6"/></svg> Participants</button>
+          <button class="panel-tab" data-tab="tables"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg> Tables & pointages</button>
+          <button class="panel-tab" data-tab="statut"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg> Statut & publication</button>
+        </aside>
+
+        <div>
+          <section class="panel-section" id="tab-presence">
+            <h2>Liste de présence</h2>
+            <p class="sub">Marque les joueurs absents : ils ne seront pas appariés à la prochaine génération de tables.</p>
+            <div id="presence-list"></div>
+          </section>
+
+          <section class="panel-section" id="tab-infos" hidden>
+            <h2>Informations du tournoi</h2>
+            <p class="sub">Modifie la description, les règlements, les dates ou le lieu à tout moment.</p>
+            <form id="infos-form" class="card" novalidate style="box-shadow:none;">
+              <div class="field">
+                <label for="i-name">Nom du tournoi</label>
+                <input type="text" id="i-name" maxlength="120" required>
+              </div>
+              <div class="field">
+                <label for="i-desc">Description</label>
+                <textarea id="i-desc" maxlength="3000"></textarea>
+              </div>
+              <div class="form-row">
+                <div class="field">
+                  <label for="i-start">Début</label>
+                  <input type="datetime-local" id="i-start">
+                </div>
+                <div class="field">
+                  <label for="i-end">Fin</label>
+                  <input type="datetime-local" id="i-end">
+                </div>
+              </div>
+              <div class="field">
+                <label for="i-location">Lieu</label>
+                <input type="text" id="i-location" maxlength="160">
+              </div>
+              <div class="field">
+                <label for="i-rules">Règlements</label>
+                <textarea id="i-rules" maxlength="6000" style="min-height:140px;"></textarea>
+              </div>
+              <label class="checkbox-line mb-2">
+                <input type="checkbox" id="i-public">
+                <span>Tournoi public (visible dans la liste d'inscriptions)</span>
+              </label>
+              <div class="alert alert-error" id="infos-error" hidden></div>
+              <button class="btn btn-primary" type="submit">Enregistrer les modifications</button>
+            </form>
+          </section>
+
+          <section class="panel-section" id="tab-participants" hidden>
+            <h2>Joueurs et arbitres</h2>
+            <p class="sub">Ajoute des joueurs par courriel (utile pour les tournois privés), ajuste leur Elo, retire quelqu'un, ou nomme un nouvel arbitre.</p>
+
+            <div class="card mb-2" style="box-shadow:none;">
+              <h4 class="mb-2">Ajouter un joueur au tournoi</h4>
+              <div class="flex-gap">
+                <input type="email" id="add-player-email" placeholder="adresse@courriel.com" style="max-width:340px;">
+                <button class="btn btn-primary btn-sm" id="add-player-btn">Ajouter le joueur</button>
+              </div>
+              <div class="hint mt-1">Une notification d'invitation lui sera envoyée dans son espace Tournechec.</div>
+            </div>
+
+            <div class="card mb-2" style="box-shadow:none;">
+              <h4 class="mb-2">Arbitres du tournoi</h4>
+              <div id="arbitres-list" class="mb-2"></div>
+              <div class="flex-gap">
+                <input type="email" id="add-arb-email" placeholder="adresse@courriel.com du nouvel arbitre" style="max-width:340px;">
+                <button class="btn btn-outline btn-sm" id="add-arb-btn">Nommer arbitre</button>
+              </div>
+            </div>
+
+            <div class="card" style="box-shadow:none;">
+              <h4 class="mb-2">Joueurs inscrits (<span id="players-count"></span>)</h4>
+              <div class="table-wrap"><table class="data" id="players-table">
+                <thead><tr><th>Nom</th><th>Elo</th><th>Année</th><th>Modifier l'Elo</th><th></th></tr></thead>
+                <tbody></tbody>
+              </table></div>
+            </div>
+          </section>
+
+          <section class="panel-section" id="tab-tables" hidden>
+            <h2>Tables et pointages</h2>
+            <p class="sub">Génère les rondes automatiquement selon l'Elo, entre les résultats, corrige ou supprime une table, puis publie.</p>
+
+            <div class="card mb-3" style="box-shadow:none;background:linear-gradient(135deg,#eef3ff,#f6efff);">
+              <div class="flex-between">
+                <div>
+                  <strong>Génération automatique</strong>
+                  <div class="muted small">Ronde 1 par Elo, puis rondes suivantes selon les résultats. Tous les pointages de la ronde en cours doivent être entrés.</div>
+                </div>
+                <button class="btn btn-primary" id="gen-btn">Générer les tables</button>
+              </div>
+            </div>
+
+            <div id="rounds-box"><p class="muted small">Aucune ronde générée pour l'instant.</p></div>
+          </section>
+
+          <section class="panel-section" id="tab-statut" hidden>
+            <h2>Statut et publication</h2>
+            <p class="sub">Publier envoie automatiquement une notification (table, couleur, adversaire) à chaque joueur présent.</p>
+
+            <div class="grid grid-2 mb-3">
+              <div class="card" style="box-shadow:none;">
+                <h4 class="mb-1">Publier les tables actuelles</h4>
+                <p class="muted small mb-2">Envoie les assignations de la dernière ronde générée et passe le tournoi « en cours ».</p>
+                <button class="btn btn-primary" id="publish-btn">Publier + notifier les joueurs</button>
+              </div>
+              <div class="card" style="box-shadow:none;">
+                <h4 class="mb-1">Ouvrir le projecteur</h4>
+                <p class="muted small mb-2">Affichage plein écran des tables pour la salle : rondes, joueurs, couleurs, résultats.</p>
+                <a class="btn btn-outline" id="projector-link" target="_blank">Ouvrir le mode projecteur</a>
+              </div>
+            </div>
+
+            <div class="card" style="box-shadow:none;">
+              <h4 class="mb-1">Cycle de vie du tournoi</h4>
+              <p class="muted small mb-2" id="status-help"></p>
+              <div class="flex-gap" id="status-buttons"></div>
+            </div>
+
+            <div class="card mt-3" style="box-shadow:none;border-color:#fecaca;">
+              <h4 class="mb-1" style="color:var(--danger);">Zone dangereuse</h4>
+              <p class="muted small mb-2">Supprimer le tournoi efface toutes ses rondes, tables et inscriptions. Irréversible.</p>
+              <button class="btn btn-danger" id="delete-t-btn">Supprimer ce tournoi</button>
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="modal-overlay" id="edit-match-modal">
+    <div class="modal" role="dialog" aria-modal="true">
+      <button class="modal-close" data-close-modal aria-label="Fermer">×</button>
+      <h3 style="margin-bottom:14px;">Modifier la table <span id="em-num"></span></h3>
+      <p class="small muted mb-2">Tu peux échanger un joueur, mettre un adversaire absent (bye) ou renuméroter la table.</p>
+      <div class="field">
+        <label for="em-white">Joueur aux blancs (id ou vide)</label>
+        <select id="em-white"></select>
+      </div>
+      <div class="field">
+        <label for="em-black">Joueur aux noirs (vide = bye)</label>
+        <select id="em-black"></select>
+      </div>
+      <div class="field">
+        <label for="em-table">Numéro de table</label>
+        <input type="number" id="em-table" min="1">
+      </div>
+      <div class="alert alert-error" id="em-error" hidden></div>
+      <button class="btn btn-primary btn-block" id="em-save">Enregistrer</button>
+    </div>
+  </div>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/navigation.js"></script>
+  <script>
+    const tid = qsParam("tournoi");
+    const STATUS_LABEL = { brouillon: "Brouillon", publie: "Publié", en_cours: "En cours", termine: "Terminé" };
+    let detail = null;
+    let editingMatch = null;
+
+    if (!tid) {
+      document.body.innerHTML = '<div style="padding:80px;text-align:center;font-family:sans-serif;"><h2>Tournoi non précisé</h2><p><a href="mes-tournois.html">Retour à mes tournois</a></p></div>';
+    }
+
+    async function guardAndLoad() {
+      try {
+        detail = await api("/tournaments/" + tid);
+        if (!detail.can_manage) {
+          toast("Tu n'es pas arbitre de ce tournoi.", "err");
+          setTimeout(() => (window.location.href = "mes-tournois.html"), 1100);
+          return;
+        }
+        renderHead();
+        renderPresence();
+        renderInfos();
+        renderParticipants();
+        renderRounds();
+        renderStatus();
+        watchReveals();
+      } catch (err) {
+        const box = document.getElementById("load-error");
+        box.textContent = err.message;
+        box.hidden = false;
+      }
+    }
+
+    function playerOptions(selectedId) {
+      const opts = ['<option value="">— Aucun (exempt / bye) —</option>'].concat(
+        detail.participants.map((p) =>
+          `<option value="${p.id}" ${p.id === selectedId ? "selected" : ""}>${escapeHtml(p.name)} (${p.elo})${p.present ? "" : " — ABSENT"}</option>`
+        )
+      );
+      return opts.join("");
+    }
+
+    function renderHead() {
+      const t = detail.tournament;
+      document.title = t.name + " · Panel arbitres · Tournechec";
+      document.getElementById("t-title").textContent = t.name;
+      document.getElementById("t-sub").textContent =
+        `${detail.participants.length} inscrit(s) · ${t.format === "elimination" ? "Élimination directe" : "Système suisse"} · ${t.location || "lieu à confirmer"}`;
+      document.getElementById("t-badges").innerHTML = `
+        <span class="badge status-${t.status}">${STATUS_LABEL[t.status] || t.status}</span>
+        ${t.current_round ? `<span class="badge badge-blue">Ronde ${t.current_round}/${t.max_rounds}</span>` : ""}
+        <a class="btn btn-outline btn-sm" href="panel-projecteur.html?tournoi=${t.id}" target="_blank">Projecteur</a>`;
+    }
+
+    async function refresh() {
+      detail = await api("/tournaments/" + tid);
+      renderHead();
+      renderPresence();
+      renderParticipants();
+      renderRounds();
+      renderStatus();
+    }
+
+    document.querySelectorAll(".panel-tab").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".panel-tab").forEach((b) => b.classList.remove("active"));
+        tab.classList.add("active");
+        document.querySelectorAll(".panel-section").forEach((s) => (s.hidden = true));
+        document.getElementById("tab-" + tab.dataset.tab).hidden = false;
+      });
+    });
+
+    function renderPresence() {
+      const list = document.getElementById("presence-list");
+      if (!detail.participants.length) {
+        list.innerHTML = '<div class="empty-state"><strong>Aucun joueur inscrit</strong>Ajoute des joueurs dans l\u2019onglet Participants.</div>';
+        return;
+      }
+      list.innerHTML = `<div class="table-wrap">${detail.participants.map((p) => `
+        <div class="presence-row">
+          <div><strong>${escapeHtml(p.name)}</strong> <span class="muted small">· Elo ${p.elo}${p.school_year ? " · " + escapeHtml(p.school_year) : ""}</span></div>
+          <div class="flex-gap">
+            <button class="btn btn-sm ${p.present ? "btn-ok" : "btn-danger"}" data-presence="${p.id}" data-value="${p.present ? 0 : 1}">
+              ${p.present ? "Présent" : "Absent"}
+            </button>
+          </div>
+        </div>`).join("")}</div>`;
+    }
+
+    document.addEventListener("click", async (e) => {
+      const b = e.target.closest("[data-presence]");
+      if (!b) return;
+      try {
+        await api(`/tournaments/${tid}/presence`, {
+          method: "POST",
+          body: { user_id: Number(b.dataset.presence), present: b.dataset.value === "1" },
+        });
+        await refresh();
+        toast("Présence mise à jour.", "ok");
+      } catch (err) {
+        toast(err.message, "err");
+      }
+    });
+
+    function renderInfos() {
+      const t = detail.tournament;
+      document.getElementById("i-name").value = t.name || "";
+      document.getElementById("i-desc").value = t.description || "";
+      document.getElementById("i-start").value = t.start_date || "";
+      document.getElementById("i-end").value = t.end_date || "";
+      document.getElementById("i-location").value = t.location || "";
+      document.getElementById("i-rules").value = t.rules || "";
+      document.getElementById("i-public").checked = !!t.public;
+    }
+
+    document.getElementById("infos-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const errBox = document.getElementById("infos-error");
+      errBox.hidden = true;
+      try {
+        await api("/tournaments/" + tid, {
+          method: "PUT",
+          body: {
+            name: document.getElementById("i-name").value,
+            description: document.getElementById("i-desc").value,
+            start_date: document.getElementById("i-start").value,
+            end_date: document.getElementById("i-end").value,
+            location: document.getElementById("i-location").value,
+            rules: document.getElementById("i-rules").value,
+            public: document.getElementById("i-public").checked,
+          },
+        });
+        toast("Informations enregistrées.", "ok");
+        await refresh();
+      } catch (err) {
+        errBox.textContent = err.message;
+        errBox.hidden = false;
+      }
+    });
+
+    function renderParticipants() {
+      const arbitresBox = document.getElementById("arbitres-list");
+      arbitresBox.innerHTML = detail.arbitres.length
+        ? detail.arbitres.map((a) => `
+          <div class="presence-row">
+            <span>${escapeHtml(a.name)} <span class="muted small">${escapeHtml(a.email)}</span></span>
+            <button class="btn btn-danger btn-sm" data-del-arb="${a.id}">Retirer</button>
+          </div>`).join("")
+        : '<p class="muted small">Aucun arbitre désigné.</p>';
+
+      const tbody = document.querySelector("#players-table tbody");
+      document.getElementById("players-count").textContent = detail.participants.length;
+      tbody.innerHTML = detail.participants.map((p) => `
+        <tr>
+          <td><strong>${escapeHtml(p.name)}</strong>${p.present ? "" : ' <span class="badge badge-red">Absent</span>'}</td>
+          <td>${p.elo}</td>
+          <td>${escapeHtml(p.school_year || "—")}</td>
+          <td><input type="number" value="${p.elo}" min="0" max="3500" style="width:100px;padding:6px 10px;" data-elo-input="${p.id}"></td>
+          <td class="flex-gap">
+            <button class="btn btn-ok btn-sm" data-save-elo="${p.id}">Sauver</button>
+            <button class="btn btn-danger btn-sm" data-del-player="${p.id}">Retirer</button>
+          </td>
+        </tr>`).join("") || '<tr><td colspan="5" class="empty-state">Aucun joueur inscrit.</td></tr>';
+    }
+
+    document.addEventListener("click", async (e) => {
+      const delPlayer = e.target.closest("[data-del-player]");
+      const saveElo = e.target.closest("[data-save-elo]");
+      const delArb = e.target.closest("[data-del-arb]");
+      try {
+        if (delPlayer) {
+          const p = detail.participants.find((x) => x.id === Number(delPlayer.dataset.delPlayer));
+          if (!confirmAction(`Retirer ${p ? p.name : "ce joueur"} du tournoi ?`)) return;
+          await api(`/tournaments/${tid}/participants`, { method: "POST", body: { action: "remove", user_id: Number(delPlayer.dataset.delPlayer) } });
+          toast("Joueur retiré.", "ok");
+          await refresh();
+        } else if (saveElo) {
+          const input = document.querySelector(`[data-elo-input="${saveElo.dataset.saveElo}"]`);
+          await api(`/tournaments/${tid}/participants`, { method: "POST", body: { action: "update", user_id: Number(saveElo.dataset.saveElo), elo: input.value } });
+          toast("Elo mis à jour.", "ok");
+          await refresh();
+        } else if (delArb) {
+          if (!confirmAction("Retirer cet arbitre du tournoi ?")) return;
+          await api(`/tournaments/${tid}/arbitres`, { method: "POST", body: { action: "remove", user_id: Number(delArb.dataset.delArb) } });
+          toast("Arbitre retiré.", "ok");
+          await refresh();
+        }
+      } catch (err) {
+        toast(err.message, "err");
+      }
+    });
+
+    document.getElementById("add-player-btn").addEventListener("click", async () => {
+      const email = document.getElementById("add-player-email").value.trim();
+      if (!email) return toast("Entre un courriel.", "err");
+      try {
+        await api(`/tournaments/${tid}/participants`, { method: "POST", body: { action: "add", email } });
+        document.getElementById("add-player-email").value = "";
+        toast("Joueur ajouté et notifié.", "ok");
+        await refresh();
+      } catch (err) {
+        toast(err.message, "err");
+      }
+    });
+
+    document.getElementById("add-arb-btn").addEventListener("click", async () => {
+      const email = document.getElementById("add-arb-email").value.trim();
+      if (!email) return toast("Entre un courriel.", "err");
+      try {
+        await api(`/tournaments/${tid}/arbitres`, { method: "POST", body: { action: "add", email } });
+        document.getElementById("add-arb-email").value = "";
+        toast("Nouvel arbitre nommé.", "ok");
+        await refresh();
+      } catch (err) {
+        toast(err.message, "err");
+      }
+    });
+
+    function renderRounds() {
+      const box = document.getElementById("rounds-box");
+      if (!detail.rounds.length) {
+        box.innerHTML = '<div class="empty-state"><strong>Aucune table générée</strong>Clique sur « Générer les tables » ci-dessus : la ronde 1 sera créée selon l\u2019Elo des joueurs présents.</div>';
+        return;
+      }
+      box.innerHTML = detail.rounds.slice().reverse().map((round) => `
+        <div class="round-banner">
+          <span>Ronde ${round.round_number}</span>
+          <span class="muted small">${round.matches.filter((m) => m.result).length}/${round.matches.length} pointées</span>
+        </div>
+        ${round.matches.map((m) => matchRow(m)).join("")}
+      `).join("");
+    }
+
+    function matchRow(m) {
+      const whiteName = m.white ? `${escapeHtml(m.white.name)} <small class="muted">(${m.white.elo})</small>` : "<em class='muted'>—</em>";
+      const blackName = m.black ? `${escapeHtml(m.black.name)} <small class="muted">(${m.black.elo})</small>` : "<em class='muted'>Exempt (bye)</em>";
+      const resultBadge = m.result === "bye"
+        ? '<span class="badge badge-gray">Bye</span>'
+        : m.result === "1-0" ? '<span class="badge badge-green">1 - 0</span>'
+        : m.result === "0-1" ? '<span class="badge badge-green">0 - 1</span>'
+        : m.result === "1/2" ? '<span class="badge badge-amber">Nulle</span>'
+        : '<span class="badge badge-gray">À jouer</span>';
+      const scoreControl = m.result === "bye"
+        ? resultBadge
+        : `
+        <div class="result-select flex-gap">
+          ${resultBadge}
+          <select data-result-select="${m.id}">
+            <option value="" ${!m.result ? "selected" : ""}>Pointer...</option>
+            <option value="1-0" ${m.result === "1-0" ? "selected" : ""}>Blancs gagnent</option>
+            <option value="0-1" ${m.result === "0-1" ? "selected" : ""}>Noirs gagnent</option>
+            <option value="1/2" ${m.result === "1/2" ? "selected" : ""}>Partie nulle</option>
+          </select>
+        </div>`;
+      return `
+        <div class="match-row">
+          <div class="table-chip">Table<br>${m.table_number}</div>
+          <div class="vs-line">
+            <span><span class="color-dot color-w"></span> ${whiteName}</span>
+            <span class="muted">contre</span>
+            <span><span class="color-dot color-b"></span> ${blackName}</span>
+          </div>
+          ${scoreControl}
+          <div class="flex-gap">
+            <button class="btn btn-outline btn-sm" data-edit-match="${m.id}">Modifier</button>
+            <button class="btn btn-danger btn-sm" data-del-match="${m.id}">Suppr.</button>
+          </div>
+        </div>`;
+    }
+
+    document.addEventListener("change", async (e) => {
+      const sel = e.target.closest("[data-result-select]");
+      if (!sel) return;
+      if (!sel.value) return;
+      try {
+        await api("/matches/" + sel.dataset.resultSelect + "/result", { method: "POST", body: { result: sel.value } });
+        toast("Pointage enregistré.", "ok");
+        await refresh();
+      } catch (err) {
+        toast(err.message, "err");
+      }
+    });
+
+    document.addEventListener("click", async (e) => {
+      const editBtn = e.target.closest("[data-edit-match]");
+      const delBtn = e.target.closest("[data-del-match]");
+      if (editBtn) {
+        editingMatch = null;
+        outer: for (const r of detail.rounds) {
+          for (const m of r.matches) {
+            if (String(m.id) === editBtn.dataset.editMatch) { editingMatch = m; break outer; }
+          }
+        }
+        if (!editingMatch) return;
+        document.getElementById("em-num").textContent = "#" + editingMatch.table_number;
+        document.getElementById("em-white").innerHTML = playerOptions(editingMatch.white ? editingMatch.white.id : null);
+        document.getElementById("em-black").innerHTML = playerOptions(editingMatch.black ? editingMatch.black.id : null);
+        document.getElementById("em-table").value = editingMatch.table_number;
+        openModal("edit-match-modal");
+      } else if (delBtn) {
+        if (!confirmAction("Supprimer cette table ?")) return;
+        try {
+          await api("/matches/" + delBtn.dataset.delMatch, { method: "DELETE" });
+          toast("Table supprimée.", "ok");
+          await refresh();
+        } catch (err) {
+          toast(err.message, "err");
+        }
+      }
+    });
+
+    document.getElementById("em-save").addEventListener("click", async () => {
+      if (!editingMatch) return;
+      const errBox = document.getElementById("em-error");
+      errBox.hidden = true;
+      try {
+        await api("/matches/" + editingMatch.id, {
+          method: "PUT",
+          body: {
+            white_id: document.getElementById("em-white").value,
+            black_id: document.getElementById("em-black").value,
+            table_number: document.getElementById("em-table").value,
+          },
+        });
+        closeModal("edit-match-modal");
+        toast("Table modifiée.", "ok");
+        await refresh();
+      } catch (err) {
+        errBox.textContent = err.message;
+        errBox.hidden = false;
+      }
+    });
+
+    document.getElementById("gen-btn").addEventListener("click", async function () {
+      this.disabled = true;
+      this.textContent = "Génération...";
+      try {
+        const res = await api(`/tournaments/${tid}/generate`, { method: "POST" });
+        toast(`Ronde ${res.round} générée : ${res.tables} table(s).`, "ok");
+        await refresh();
+      } catch (err) {
+        toast(err.message, "err");
+      } finally {
+        this.disabled = false;
+        this.textContent = "Générer les tables";
+      }
+    });
+
+    document.getElementById("publish-btn").addEventListener("click", async function () {
+      this.disabled = true;
+      this.textContent = "Publication et envoi...";
+      try {
+        const res = await api(`/tournaments/${tid}/publish`, { method: "POST" });
+        toast(`Tables publiées ! ${res.emails_envoyes} notification(s) envoyée(s).`, "ok");
+        await refresh();
+      } catch (err) {
+        toast(err.message, "err");
+      } finally {
+        this.disabled = false;
+        this.textContent = "Publier + notifier les joueurs";
+      }
+    });
+
+    function renderStatus() {
+      const t = detail.tournament;
+      document.getElementById("projector-link").href = "panel-projecteur.html?tournoi=" + t.id;
+      const helpMap = {
+        brouillon: "Statut actuel : brouillon. Génère et publie les tables quand les inscriptions sont prêtes.",
+        publie: "Statut actuel : publié mais pas encore démarré. Publie les tables pour passer « en cours ».",
+        en_cours: "Statut actuel : en cours. Entre les pointages puis génère les rondes suivantes.",
+        termine: "Statut actuel : terminé. Le champion a été calculé et annoncé aux participants.",
+      };
+      document.getElementById("status-help").textContent = helpMap[t.status] || "";
+      const buttons = [];
+      if (t.status !== "termine") {
+        buttons.push(['en_cours', "Passer en cours", "btn-primary"]);
+        buttons.push(["termine", "Terminer le tournoi", "btn-ok"]);
+      } else {
+        buttons.push(["en_cours", "Rouvrir (en cours)", "btn-outline"]);
+      }
+      document.getElementById("status-buttons").innerHTML = buttons
+        .map(([s, label, cls]) => `<button class="btn ${cls}" data-set-status="${s}">${label}</button>`)
+        .join("");
+    }
+
+    document.addEventListener("click", async (e) => {
+      const b = e.target.closest("[data-set-status]");
+      if (!b) return;
+      const target = b.dataset.setStatus;
+      if (target === "termine" && !confirmAction("Terminer le tournoi calcule le champion et envoie les résultats finaux à tous.")) return;
+      try {
+        const res = await api(`/tournaments/${tid}/status`, { method: "POST", body: { status: target } });
+        toast(target === "termine" && res.champion ? `Tournoi terminé ! Champion : ${res.champion}` : "Statut mis à jour.", "ok");
+        await refresh();
+      } catch (err) {
+        toast(err.message, "err");
+      }
+    });
+
+    document.getElementById("delete-t-btn").addEventListener("click", async function () {
+      if (!confirmAction("Supprimer définitivement ce tournoi et toutes ses données ?")) return;
+      try {
+        await api("/tournaments/" + tid, { method: "DELETE" });
+        window.location.href = "mes-tournois.html";
+      } catch (err) {
+        toast(err.message, "err");
+      }
+    });
+
+    guardAndLoad();
+  </script>
+</body>
+</html>
