@@ -162,24 +162,6 @@
               <p class="footer-tagline">Organisez des tournois d'échecs rapidement et efficacement, du club scolaire au grand événement.</p>
             </div>
             <div>
-              <h4>Navigation</h4>
-              <ul class="footer-links">
-                <li><a href="accueil.html">Accueil</a></li>
-                <li><a href="fonctionnement.html">Fonctionnement</a></li>
-                <li><a href="aide.html">Aide & FAQ</a></li>
-                <li><a href="a-propos-du-developpeur.html">À propos du développeur</a></li>
-              </ul>
-            </div>
-            <div>
-              <h4>Tournois</h4>
-              <ul class="footer-links">
-                <li><a href="s-inscrire-a-un-tournoi.html">S'inscrire à un tournoi</a></li>
-                <li><a href="creer-un-tournoi.html">Créer un tournoi</a></li>
-                <li><a href="mes-tournois.html">Mes tournois</a></li>
-                <li><a href="interface-utilisateur.html">Mon espace</a></li>
-              </ul>
-            </div>
-            <div>
               <h4>Contact</h4>
               <div class="footer-contact">
                 <span>Une question ou un problème ?</span>
