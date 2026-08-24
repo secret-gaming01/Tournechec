@@ -55,7 +55,7 @@ tournechec/
 
 <div align="center">
 
-Développé par [secret_gaming01](https://github.com/Secret-gaming01) · [Twitch](https://www.twitch.tv/secret_gaming01) · [Portfolio](https://secret-gaming01.github.io/portfolio/)
+Développé par [secret_gaming01](https://github.com/Secret-gaming01) · [Twitch](https://www.twitch.tv/secret_gaming01) · [Portfolio](https://secret-gaming01.github.io/Portfolio/)
 
 [Mentions légales](https://secret-gaming01.github.io/Tournechec/mentions-legales.html) · [Confidentialité](https://secret-gaming01.github.io/Tournechec/confidentialite.html) · [Aide](https://secret-gaming01.github.io/Tournechec/aide.html)
 
