@@ -26,6 +26,7 @@
   --ok-border: #bbf7d0;
   --info-border: #c7d7ff;
   --round-border: #b9c8ef;
+  --cta-bg: linear-gradient(135deg, #eef3ff, #f6efff);
   --radius: 14px;
   --radius-sm: 10px;
   --shadow: 0 6px 24px rgba(23, 34, 59, 0.08);
@@ -63,6 +64,7 @@
   --ok-border: #1d5230;
   --info-border: #24407a;
   --round-border: #31406b;
+  --cta-bg: linear-gradient(135deg, #16224a, #251d40);
   --shadow: 0 6px 24px rgba(0, 0, 0, 0.45);
   --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.55);
   color-scheme: dark;
