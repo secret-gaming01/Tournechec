@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>(function(){try{var t=localStorage.getItem("tc_theme");if(t!=="dark"&&t!=="light"){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.dataset.theme=t;}catch(e){}})();</script>
   <title>Panel admin · Tournechec</title>
   <meta name="description" content="Administration Tournechec : utilisateurs, tournois, modération, support et statistiques.">
   <link rel="icon" type="image/svg+xml" href="media/images/logo.svg">
@@ -141,7 +142,7 @@
       box.innerHTML = `<div class="table-wrap"><table class="data">
         <thead><tr><th>Nom</th><th>Courriel</th><th>Elo</th><th>Rôle</th><th>Statut</th><th>Actions</th></tr></thead>
         <tbody>${users.map((u) => `
-          <tr${u.banned ? ' style="background:#fff5f5;"' : ""}>
+          <tr${u.banned ? ' style="background:var(--danger-soft);"' : ""}>
             <td><strong>${escapeHtml(u.name)}</strong><div class="muted small">${escapeHtml(u.school_year || "—")}</div></td>
             <td>${escapeHtml(u.email)}</td>
             <td>${u.elo}</td>

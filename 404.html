@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>(function(){try{var t=localStorage.getItem("tc_theme");if(t!=="dark"&&t!=="light"){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.dataset.theme=t;}catch(e){}})();</script>
   <title>Page introuvable · Tournechec</title>
   <meta name="robots" content="noindex">
   <link rel="icon" type="image/svg+xml" href="media/images/logo.svg">
@@ -19,6 +20,12 @@
     a.btn{display:inline-block;padding:13px 28px;border-radius:14px;text-decoration:none;font-weight:600;margin:0 6px 8px;}
     .primary{background:#2f54eb;color:#fff !important;box-shadow:0 8px 20px rgba(47,84,235,.3);}
     .ghost{border:1.5px solid #d5dbee;color:#17223b;}
+
+    @media (prefers-color-scheme: dark){
+      body{background:#0b1220;color:#e6ebf7;}
+      p{color:#94a3b8;}
+      .ghost{border-color:#243050;color:#e6ebf7;}
+    }
   </style>
 </head>
 <body>
