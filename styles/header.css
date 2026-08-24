@@ -85,6 +85,7 @@
   font-weight: 800; font-size: 0.95rem;
   font-family: var(--font-title);
 }
+.avatar-img { object-fit: cover; box-shadow: 0 0 0 2px rgba(36, 86, 230, 0.25); }
 
 .profile-menu {
   position: absolute;

@@ -310,6 +310,13 @@
       return { user: await currentUser() };
     }
 
+    if (seg[0] === "owner" && method === "GET") {
+      const row = await q(() =>
+        client.from("profiles").select("id").order("created_at", { ascending: true }).limit(1).maybeSingle()
+      );
+      return { id: row ? row.id : null };
+    }
+
     if (seg[0] === "register" && method === "POST") {
       if (body.hp_website) throw new ApiError("Requête refusée par le système anti-robot.");
       const name = String(body.name || "").trim().slice(0, 80);

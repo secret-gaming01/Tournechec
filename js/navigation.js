@@ -69,10 +69,15 @@
       return;
     }
     const initial = (user.name || "?").trim().charAt(0).toUpperCase();
+    let cachedOwner = null;
+    try { cachedOwner = localStorage.getItem("tc_owner_id"); } catch {}
+    const avatarHtml = cachedOwner === user.id
+      ? '<img class="avatar avatar-img" src="media/images/avatar.png" alt="" width="34" height="34">'
+      : `<span class="avatar">${initial}</span>`;
     area.innerHTML = `
       <div class="profile-wrap">
         <button class="profile-btn" id="profile-btn" aria-haspopup="true">
-          <span class="avatar">${initial}</span>
+          ${avatarHtml}
           <span class="profile-name">${escapeHtml(user.name.split(" ")[0])}</span>
           ${ICON.chevron}
         </button>
@@ -171,6 +176,21 @@
     window.TC_USER = user;
     document.dispatchEvent(new CustomEvent("tc:user", { detail: user }));
     renderAuthArea(user);
+
+    if (user) {
+      let cachedOwner = null;
+      try { cachedOwner = localStorage.getItem("tc_owner_id"); } catch {}
+      if (!cachedOwner) {
+        api("/owner").then((d) => {
+          if (d && d.id) {
+            try { localStorage.setItem("tc_owner_id", d.id); } catch {}
+            if (d.id === user.id) renderAuthArea(user);
+          }
+        }).catch(() => {});
+      } else if (cachedOwner === user.id) {
+        renderAuthArea(user);
+      }
+    }
 
     const needAuth = document.body.dataset.auth === "required";
     const allowedRoles = (document.body.dataset.roles || "").split(",").filter(Boolean);
