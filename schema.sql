@@ -1,3 +1,4 @@
+-- Tournechec (c) 2026 secret_gaming01 - Logiciel propriétaire. Copie, modification et déploiement interdits. Voir LICENSE.txt.
 -- ============================================================
 -- Tournechec — Schéma Supabase (PostgreSQL)
 -- À exécuter dans : Supabase > SQL Editor > New query > Run

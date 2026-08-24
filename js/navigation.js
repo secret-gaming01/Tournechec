@@ -1,3 +1,4 @@
+/* Tournechec (c) 2026 secret_gaming01 - Logiciel propriétaire. Copie, modification et déploiement interdits. Voir LICENSE.txt. */
 (function () {
   const NAV_LINKS = [
     { href: "accueil.html", label: "Accueil", page: "accueil" },

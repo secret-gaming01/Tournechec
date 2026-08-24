@@ -30,18 +30,11 @@
 
 HTML / CSS / JavaScript pur (aucun framework) · [GitHub Pages](https://pages.github.com) pour l'hébergement · [Supabase](https://supabase.com) pour la base de données, l'authentification et la sécurité Row Level Security.
 
-## Déployer ton propre Tournechec
+## Droits d'utilisation
 
-Tout est expliqué dans le guide pas à pas : **[README-DEPLOIEMENT.md](README-DEPLOIEMENT.md)** (20 minutes, gratuit).
+Le site Tournechec est **libre d'utilisation** pour organiser et participer à des tournois d'échecs.
 
-En résumé :
-
-1. Crée un projet sur [supabase.com](https://supabase.com)
-2. Exécute `schema.sql` dans le SQL Editor
-3. Copie l'URL + la clé publique dans `js/config.js`
-4. Pousse le dossier sur GitHub et active GitHub Pages
-
-Le premier compte créé devient automatiquement administrateur.
+En revanche, le code source est un **logiciel propriétaire** : copie, modification, redistribution et déploiement de versions dérivées sont **interdits** sans l'autorisation écrite de l'auteur. Voir [LICENSE.txt](LICENSE.txt).
 
 ## Structure du projet
 

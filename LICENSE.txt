@@ -1,0 +1,19 @@
+Tournechec — Logiciel propriétaire
+Copyright (c) 2026 secret_gaming01. Tous droits réservés.
+
+UTILISATION DU SITE
+Le site https://secret-gaming01.github.io/Tournechec/ est libre d'utilisation
+pour organiser et participer à des tournois d'échecs. Aucune inscription de
+copie n'est nécessaire : créez simplement votre compte et jouez.
+
+CODE SOURCE — DROITS RESTREINTS
+Le code source (HTML, CSS, JavaScript, SQL) est la propriété exclusive de son
+auteur. Il est strictement interdit de :
+  - copier, télécharger ou modifier le code ;
+  - le redistribuer, le republier ou le partager ;
+  - l'utiliser, en tout ou en partie, pour déployer un site ou un service
+    dérivé, sans l'autorisation écrite préalable de l'auteur.
+
+Toute demande d'autorisation peut être faite via la page Aide du site.
+
+Toute utilisation non autorisée pourra donner lieu à des poursuites.
