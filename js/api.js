@@ -221,15 +221,23 @@
     return pairs.filter((p) => p.white || p.black);
   }
 
-  async function notify(userId, recipientName, subject, bodyText, kind) {
+async function notify(userId, recipientName, subject, bodyText, kind, tid) {
+    let email = "";
+    if (userId) {
+      const p = await q(() =>
+        client.from("profiles").select("email").eq("id", userId).maybeSingle()
+      ).catch(() => null);
+      if (p && p.email) email = p.email;
+    }
     await q(() =>
       client.from("notifications").insert({
         user_id: userId || null,
         recipient_name: recipientName || "",
-        email: "",
+        email,
         subject,
         body: bodyText || "",
         kind: kind || "auto",
+        tournament_id: tid || null,
       })
     );
   }
@@ -617,11 +625,13 @@ if (seg[0] === "logout" && method === "POST") {
             }),
           "Inscription non autorisée."
         );
-        await notify(
+await notify(
           user.id,
           user.name,
           "Inscription confirmée : " + t.name,
-          "Bonjour " + user.name + ", ton inscription au tournoi « " + t.name + " » (" + (t.location || "lieu à confirmer") + ") est confirmée. Tu recevras une notification dès que les tables seront publiées."
+          "Bonjour " + user.name + ", ton inscription au tournoi « " + t.name + " » (" + (t.location || "lieu à confirmer") + ") est confirmée. Tu recevras un courriel dès que les tables seront publiées.",
+          "auto",
+          tid
         );
         return { ok: true };
       }
@@ -661,7 +671,7 @@ if (seg[0] === "logout" && method === "POST") {
               }),
             "Ajout non autorisé."
           );
-          await notify(target.id, target.name, "Invitation : " + t.name, "Bonjour " + target.name + ", l'arbitre t'a ajouté au tournoi « " + t.name + " » (" + (t.location || "lieu à confirmer") + ").");
+          await notify(target.id, target.name, "Invitation : " + t.name, "Bonjour " + target.name + ", l'arbitre t'a ajouté au tournoi « " + t.name + " » (" + (t.location || "lieu à confirmer") + ").", "auto", tid);
           return { ok: true };
         }
         if (action === "remove") {
@@ -827,11 +837,12 @@ if (seg[0] === "logout" && method === "POST") {
           const w = m.white_id ? pm.get(m.white_id) : null;
           const b = m.black_id ? pm.get(m.black_id) : null;
           const lieu = t.location ? " à " + t.location : "";
-          if (w && !b) {
+if (w && !b) {
             rows.push({
               user_id: w.id,
               recipient_name: w.name || "",
-              email: "",
+              email: w.email || "",
+              tournament_id: tid,
               subject: t.name + " — ronde " + lastRound.round_number,
               body: "Bonjour " + (w.name || "") + ", tu es exempt (bye) à la table " + m.table_number + " pour la ronde " + lastRound.round_number + " du tournoi « " + t.name + " »" + lieu + ". Un point est automatiquement attribué.",
               kind: "auto",
@@ -841,7 +852,8 @@ if (seg[0] === "logout" && method === "POST") {
             rows.push({
               user_id: w.id,
               recipient_name: w.name || "",
-              email: "",
+              email: w.email || "",
+              tournament_id: tid,
               subject: t.name + " — ronde " + lastRound.round_number,
               body: base + " tu joues avec les blancs contre " + (b.name || "?") + " à la table " + m.table_number + ".",
               kind: "auto",
@@ -849,7 +861,8 @@ if (seg[0] === "logout" && method === "POST") {
             rows.push({
               user_id: b.id,
               recipient_name: b.name || "",
-              email: "",
+              email: b.email || "",
+              tournament_id: tid,
               subject: t.name + " — ronde " + lastRound.round_number,
               body: base + " tu joues avec les noirs contre " + (w.name || "?") + " à la table " + m.table_number + ".",
               kind: "auto",
@@ -911,10 +924,11 @@ if (seg[0] === "logout" && method === "POST") {
             client.from("registrations").select("user_id").eq("tournament_id", tid)
           );
           const pm = await profilesMap((regsAll || []).map((r) => r.user_id));
-          const notifRows = [...pm.values()].map((p) => ({
+const notifRows = [...pm.values()].map((p) => ({
             user_id: p.id,
             recipient_name: p.name || "",
-            email: "",
+            email: p.email || "",
+            tournament_id: tid,
             subject: t.name + " — tournoi terminé",
             body: "Le tournoi « " + t.name + " » est terminé." + (champion ? " Félicitations au champion : " + champion + " !" : ""),
             kind: "auto",
