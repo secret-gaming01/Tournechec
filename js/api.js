@@ -366,9 +366,34 @@
       return { user };
     }
 
-    if (seg[0] === "logout" && method === "POST") {
+if (seg[0] === "logout" && method === "POST") {
       needClient();
       await client.auth.signOut();
+      return { ok: true };
+    }
+
+    if (seg[0] === "forgot-password" && method === "POST") {
+      if (body.hp_website) throw new ApiError("Requête refusée par le système anti-robot.");
+      needClient();
+      const email = String(body.email || "").trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new ApiError("Adresse courriel invalide.");
+      const p = window.location.pathname || "/";
+      const dir = p.slice(0, p.lastIndexOf("/") + 1);
+      const { error } = await client.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + dir + "reinitialiser-mot-de-passe.html",
+      });
+      if (error) throw new ApiError(error.message);
+      return { ok: true };
+    }
+
+    if (seg[0] === "reset-password" && method === "POST") {
+      needClient();
+      const password = String(body.password || "");
+      const password2 = String(body.password2 || "");
+      if (password.length < 8) throw new ApiError("Le nouveau mot de passe doit contenir au moins 8 caractères.");
+      if (password !== password2) throw new ApiError("Les deux mots de passe ne correspondent pas.");
+      const { error } = await client.auth.updateUser({ password });
+      if (error) throw new ApiError(error.message);
       return { ok: true };
     }
 
@@ -1104,6 +1129,12 @@
   }
 
   window.api = api;
+  window.onPasswordRecovery = function (cb) {
+    needClient();
+    client.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") cb();
+    });
+  };
   window.qsParam = function (name) {
     return new URLSearchParams(window.location.search).get(name);
   };

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>(function(){try{var t=localStorage.getItem("tc_theme");if(t!=="dark"&&t!=="light"){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.dataset.theme=t;}catch(e){}})();</script>
+  <title>Mot de passe oublié · Tournechec</title>
+  <meta name="description" content="Récupère l'accès à ton compte Tournechec : reçois un lien par courriel pour choisir un nouveau mot de passe.">
+  <link rel="icon" type="image/svg+xml" href="media/images/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/general.css">
+  <link rel="stylesheet" href="styles/header.css">
+  <link rel="stylesheet" href="styles/bottom.css">
+  <link rel="stylesheet" href="styles/pages.css">
+</head>
+<body data-page="mot-de-passe-oublie">
+  <div id="site-header"></div>
+
+  <main class="section-tight">
+    <div class="container section-head center">
+      <span class="kicker">Pas de panique</span>
+      <h1>Mot de passe oublié</h1>
+      <p>Entre ton adresse courriel : si elle est liée à un compte, un message avec un lien de réinitialisation va partir.</p>
+    </div>
+
+    <div class="container">
+      <form id="forgot-form" class="card form-card" novalidate>
+        <div class="field">
+          <label for="f-email">Adresse courriel</label>
+          <input type="email" id="f-email" name="email" required autocomplete="email" maxlength="120">
+        </div>
+        <input type="text" name="hp_website" value="" style="position:absolute;left:-9999px;" tabindex="-1" autocomplete="off" aria-hidden="true">
+        <div class="alert alert-error" id="forgot-error" hidden></div>
+        <div class="alert alert-success" id="forgot-ok" hidden>
+          Si un compte existe avec cette adresse, un courriel avec un lien de réinitialisation vient d'être envoyé.
+          Pense à vérifier tes courriers indésirables. Le lien expire après une heure.
+        </div>
+        <button class="btn btn-primary btn-block btn-lg" type="submit" id="forgot-btn">Recevoir le lien</button>
+        <p class="small muted text-center mt-2"><a href="se-connecter.html">← Retour à la connexion</a></p>
+      </form>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/navigation.js"></script>
+  <script>
+    const forgotForm = document.getElementById("forgot-form");
+    const forgotBtn = document.getElementById("forgot-btn");
+
+    forgotForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const errBox = document.getElementById("forgot-error");
+      const okBox = document.getElementById("forgot-ok");
+      errBox.hidden = true;
+      okBox.hidden = true;
+      forgotBtn.disabled = true;
+      forgotBtn.textContent = "Envoi en cours...";
+      try {
+        await api("/forgot-password", { method: "POST", body: formValues(forgotForm) });
+        okBox.hidden = false;
+        forgotBtn.textContent = "Courriel envoyé";
+        forgotForm.querySelector('input[name="email"]').disabled = true;
+      } catch (err) {
+        errBox.textContent = err.message;
+        errBox.hidden = false;
+        forgotBtn.disabled = false;
+        forgotBtn.textContent = "Recevoir le lien";
+      }
+    });
+  </script>
+</body>
+</html>
