@@ -71,9 +71,9 @@
             <h1 style="font-size:clamp(1.5rem,3vw,2rem);">${escapeHtml(t.name)}</h1>
             <p class="muted small">${escapeHtml(t.location || "")} ${t.start_date ? "· " + escapeHtml(t.start_date) : ""}</p>
           </div>
-          <div class="flex-gap">
+<div class="flex-gap">
             <span class="badge status-${t.status}">${STATUS_LABEL[t.status] || t.status}</span>
-            <a class="btn btn-outline btn-sm" href="panel-projecteur.html?tournoi=${t.id}" target="_blank">Voir le projecteur</a>
+            ${me && (me.role === "arbitre" || me.role === "admin") ? `<a class="btn btn-outline btn-sm" href="panel-projecteur.html?tournoi=${t.id}" target="_blank">Voir le projecteur</a>` : ""}
           </div>
         </div>`;
 

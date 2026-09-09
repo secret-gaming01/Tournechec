@@ -142,6 +142,21 @@
 .profile-menu a:hover { background: var(--primary-soft); color: var(--primary); }
 .profile-menu .danger:hover { background: var(--danger-soft); color: var(--danger); }
 .profile-menu svg { width: 17px; height: 17px; flex-shrink: 0; }
+.profile-menu .notif-badge { margin-left: auto; }
+.notif-badge {
+  display: inline-block;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+.notif-badge[hidden] { display: none; }
 
 .burger {
   display: none;

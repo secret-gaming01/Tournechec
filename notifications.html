@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>(function(){try{var t=localStorage.getItem("tc_theme");if(t!=="dark"&&t!=="light"){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.dataset.theme=t;}catch(e){}})();</script>
+  <title>Notifications · Tournechec</title>
+  <meta name="description" content="Retrouve toutes tes notifications Tournechec : inscriptions, tables publiées, tournois terminés.">
+  <link rel="icon" type="image/svg+xml" href="media/images/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/general.css">
+  <link rel="stylesheet" href="styles/header.css">
+  <link rel="stylesheet" href="styles/bottom.css">
+  <link rel="stylesheet" href="styles/pages.css">
+</head>
+<body data-page="notifications" data-auth="required">
+  <div id="site-header"></div>
+
+  <main class="section-tight">
+    <div class="container section-head center">
+      <span class="kicker">Ton espace</span>
+      <h1>Notifications</h1>
+      <p>Inscriptions, tables publiées, invitations et tournois terminés : tout est ici.</p>
+    </div>
+
+    <div class="container" style="max-width:820px;">
+      <div class="flex-gap" style="justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <span class="muted small" id="notif-count"></span>
+        <button class="btn btn-outline btn-sm" id="mark-read-btn" hidden>Tout marquer comme lu</button>
+      </div>
+      <div id="notif-list"></div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/navigation.js"></script>
+  <script>
+    const list = document.getElementById("notif-list");
+    const countEl = document.getElementById("notif-count");
+    const markBtn = document.getElementById("mark-read-btn");
+
+    function formatDate(ms) {
+      const d = new Date(ms);
+      const now = new Date();
+      const sameDay = d.toDateString() === now.toDateString();
+      const time = d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+      if (sameDay) return "Aujourd'hui à " + time;
+      const yesterday = new Date(now);
+      yesterday.setDate(now.getDate() - 1);
+      if (d.toDateString() === yesterday.toDateString()) return "Hier à " + time;
+      return d.toLocaleDateString("fr-FR", { day: "numeric", month: "long" }) + " à " + time;
+    }
+
+    function render(data) {
+      const items = (data && data.items) || [];
+      countEl.textContent = items.length
+        ? items.length + (items.length > 1 ? " notifications" : " notification") + (data.unread ? " · " + data.unread + " non lue(s)" : "")
+        : "";
+      markBtn.hidden = !data.unread;
+      list.innerHTML = items.length
+        ? items.map((n) => `
+            <div class="card notif-card${n.read ? "" : " unread"}">
+              <div class="notif-head">
+                <strong>${escapeHtml(n.subject)}</strong>
+                <span class="tag${n.kind === "manuel" ? " tag-violet" : " tag-blue"}">${n.kind === "manuel" ? "Message de l'admin" : "Automatique"}</span>
+              </div>
+              <p class="notif-body">${escapeHtml(n.body)}</p>
+              <span class="muted small">${formatDate(n.created_at)}</span>
+            </div>`).join("")
+        : '<div class="card"><p class="muted text-center" style="padding:24px;">Aucune notification pour le moment. Les nouvelles notifications apparaîtront ici.</p></div>';
+    }
+
+    markBtn.addEventListener("click", async () => {
+      markBtn.disabled = true;
+      try {
+        await api("/notifications/read", { method: "POST" });
+        toast("Toutes les notifications sont marquées comme lues.", "ok");
+        render((await api("/notifications")) || { items: [] });
+      } catch (err) {
+        toast(err.message, "err");
+      }
+      markBtn.disabled = false;
+    });
+
+    api("/notifications").then(render).catch((err) => {
+      list.innerHTML = '<div class="card"><p class="muted text-center" style="padding:24px;">Impossible de charger les notifications.</p></div>';
+      console.warn(err.message);
+    });
+  </script>
+</body>
+</html>

@@ -216,7 +216,14 @@
     while (padded.length < size) padded.push(null);
     const pairs = [];
     for (let i = 0; i < size / 2; i++) {
-      pairs.push({ white: padded[i] || null, black: padded[size - 1 - i] || null });
+      let white = padded[i] || null;
+      let black = padded[size - 1 - i] || null;
+      if (white && black && Math.random() < 0.5) {
+        const swap = white;
+        white = black;
+        black = swap;
+      }
+      pairs.push({ white, black });
     }
     return pairs.filter((p) => p.white || p.black);
   }
@@ -316,6 +323,37 @@
         client.from("profiles").select("id").order("created_at", { ascending: true }).limit(1).maybeSingle()
       );
       return { id: row ? row.id : null };
+    }
+
+    if (seg[0] === "notifications" && method === "GET") {
+      const user = await requireUser();
+      const rows = await q(() =>
+        client.from("notifications")
+          .select("id,subject,body,kind,read,created_at")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(100)
+      );
+      return {
+        items: (rows || []).map((n) => ({
+          id: n.id,
+          subject: n.subject,
+          body: n.body,
+          kind: n.kind,
+          read: !!n.read,
+          created_at: new Date(n.created_at).getTime(),
+        })),
+        unread: (rows || []).filter((n) => !n.read).length,
+      };
+    }
+
+    if (seg[0] === "notifications" && seg[1] === "read" && method === "POST") {
+      const user = await requireUser();
+      await q(() =>
+        client.from("notifications").update({ read: true }).eq("user_id", user.id).eq("read", false),
+        "Modification non autorisée."
+      );
+      return { ok: true };
     }
 
     if (seg[0] === "register" && method === "POST") {
@@ -774,7 +812,10 @@ if (seg[0] === "logout" && method === "POST") {
             if (winners.length <= 1) throw new ApiError("Le vainqueur est déjà déterminé : termine le tournoi.");
             pairs = [];
             for (let i = 0; i < winners.length; i += 2) {
-              pairs.push({ white: winners[i], black: winners[i + 1] || null });
+              const a = winners[i];
+              const b = winners[i + 1] || null;
+              if (b && Math.random() < 0.5) pairs.push({ white: b, black: a });
+              else pairs.push({ white: a, black: b });
             }
           } else {
             if (lastRound.round_number >= t.max_rounds) {
@@ -928,6 +969,10 @@ if (seg[0] === "logout" && method === "POST") {
       }
 
       if (seg[2] === "projector" && method === "GET") {
+        const user = await requireUser();
+        if (user.role !== "admin" && user.role !== "arbitre") {
+          throw new ApiError("Accès réservé aux arbitres.", 403);
+        }
         const t = await loadTournament(tid);
         const lastRound = await q(() =>
           client.from("rounds").select("*").eq("tournament_id", tid).order("round_number", { ascending: false }).limit(1).maybeSingle()

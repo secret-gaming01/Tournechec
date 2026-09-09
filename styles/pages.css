@@ -277,6 +277,30 @@ body.projector-mode {
   color: var(--muted);
 }
 
+.notif-card { position: relative; margin-bottom: 12px; padding: 16px 18px; }
+.notif-card.unread { border-color: var(--primary); background: var(--primary-soft); }
+.notif-card.unread::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 16px; bottom: 16px;
+  width: 3px;
+  background: var(--primary);
+  border-radius: 0 3px 3px 0;
+}
+.notif-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.notif-head strong { font-family: var(--font-title); }
+.notif-body { margin-bottom: 8px; }
+.tag {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.tag-blue { background: var(--primary-soft); color: var(--primary); }
+.tag-violet { background: var(--violet-soft); color: var(--accent); }
+
 @media (max-width: 900px) {
   .panel-layout { grid-template-columns: 1fr; }
   .panel-side { position: static; display: flex; overflow-x: auto; gap: 6px; padding: 8px; }

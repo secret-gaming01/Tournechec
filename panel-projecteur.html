@@ -100,8 +100,15 @@
       if (e.key === "f" || e.key === "F") document.getElementById("fullscreen-btn").click();
     });
 
-    tick();
-    setInterval(tick, 15000);
+api("/me").then((d) => {
+      const u = d.user;
+      if (!u || (u.role !== "arbitre" && u.role !== "admin")) {
+        document.body.innerHTML = '<div style="padding:80px;text-align:center;color:#fff;font-family:sans-serif;"><h3>Accès réservé aux arbitres</h3><p style="color:#aab4cc;"><a href="se-connecter.html" style="color:#8ab4ff;">Connexion</a> · <a href="accueil.html" style="color:#8ab4ff;">Accueil</a></p></div>';
+        return;
+      }
+      tick();
+      setInterval(tick, 15000);
+    });
   </script>
 </body>
 </html>
