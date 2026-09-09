@@ -80,22 +80,53 @@
         </div>`;
     }
 
+    function renderContent(data) {
+      const t = data.tournament;
+      const bracketBox = document.getElementById("proj-bracket");
+      const grid = document.getElementById("proj-grid");
+
+      if (t.format === "elimination") {
+        grid.style.display = "none";
+        grid.innerHTML = "";
+        const rounds = data.rounds || [];
+        if (!rounds.length) {
+          bracketBox.innerHTML = '<p class="proj-meta" style="margin-top:40px;">Les tables de la pyramide n\'ont pas encore été générées...</p>';
+          return;
+        }
+        const step = window.BRACKET_STEP || 94;
+        const firstHeight = rounds[0].matches.length * step;
+        const offset = Math.max(30, Math.round((window.innerHeight - firstHeight) / 2 - 150));
+        bracketBox.innerHTML = `<h2 class="proj-section-title">Pyramide éliminatoire</h2>` + renderBracketHTML(rounds, { paddingTop: offset });
+      } else {
+        grid.style.display = "";
+        bracketBox.innerHTML = "";
+        grid.innerHTML = data.tables.length
+          ? data.tables.map(tableCard).join("")
+          : '<p class="proj-meta">Aucune table publiée pour l\'instant.</p>';
+      }
+    }
+
+    function badgeOf(t) {
+      const b = { brouillon: "badge-gray", publie: "badge-blue", en_cours: "badge-green", termine: "badge-amber" }[t.status];
+      return `<span class="badge ${b || "badge-gray"}">${STATUS_LABEL[t.status] || t.status}</span>`;
+    }
+
     function render(data) {
       const t = data.tournament;
       document.title = t.name + " · Projecteur · Tournechec";
       document.getElementById("proj-name").textContent = t.name;
 
       if (t.status === "termine" && t.champion) {
-        document.getElementById("proj-round").innerHTML = "";
+        document.getElementById("proj-round").innerHTML = `<div class="proj-status-row">${badgeOf(t)}</div>`;
         document.getElementById("proj-champion").innerHTML =
           `<div class="proj-champion"><span class="champ-tag">Champion</span> ${escapeHtml(t.champion)}</div>`;
       } else if (data.round && data.round.round_number > 0) {
         document.getElementById("proj-round").innerHTML =
-          `<div class="proj-round">Ronde ${data.round.round_number} — ${data.tables.length} table(s)</div>`;
+          `<div class="proj-status-row">${badgeOf(t)} <span class="proj-round">Ronde ${data.round.round_number} — ${data.tables.length} table(s)</span></div>`;
         document.getElementById("proj-champion").innerHTML = "";
       } else {
         document.getElementById("proj-round").innerHTML =
-          `<div class="proj-round">${STATUS_LABEL[t.status] || t.status} — tables en préparation...</div>`;
+          `<div class="proj-status-row">${badgeOf(t)} <span class="proj-round">tables en préparation...</span></div>`;
         document.getElementById("proj-champion").innerHTML = "";
       }
 
@@ -112,20 +143,10 @@
         standingsBox.innerHTML = "";
       }
 
-      const bracketBox = document.getElementById("proj-bracket");
-      if (t.format === "elimination") {
-        bracketBox.innerHTML = "<h2 class=\"proj-section-title\">Pyramide éliminatoire</h2>" + renderBracketHTML(data.rounds || []);
-      } else {
-        bracketBox.innerHTML = "";
-      }
-
-      const grid = document.getElementById("proj-grid");
-      grid.innerHTML = data.tables.length
-        ? data.tables.map(tableCard).join("")
-        : '<p class="proj-meta">Aucune table publiée pour l\'instant.</p>';
+      renderContent(data);
 
       document.getElementById("proj-meta").innerHTML =
-        `${data.participants} participant(s) · ${t.location ? escapeHtml(t.location) + " · " : ""}${t.start_date ? escapeHtml(t.start_date) : ""} · ${STATUS_LABEL[t.status] || t.status}`;
+        `${data.participants} participant(s) · ${t.location ? escapeHtml(t.location) + " · " : ""}${t.start_date ? escapeHtml(t.start_date) : ""}`;
     }
 
     async function tick() {

@@ -62,7 +62,8 @@
     return '<div class="b-match" style="margin-top:' + top + 'px;">' + inner + "</div>";
   }
 
-  window.renderBracketHTML = function (rounds) {
+  window.renderBracketHTML = function (rounds, opts) {
+    opts = opts || {};
     if (!rounds || !rounds.length) {
       return '<div class="card"><p class="muted text-center" style="padding:24px;">Les tables de la première ronde n\'ont pas encore été générées.</p></div>';
     }
@@ -80,7 +81,8 @@
       return '<div class="b-col"><div class="b-round-label">Ronde ' + round.round_number + "</div>"
         + round.matches.map(function (m, mi) { return matchBox(m, tops[mi]); }).join("") + "</div>";
     }).join("");
-    return '<div class="bracket">' + cols + "</div>";
+    const style = opts.paddingTop ? ' style="padding-top:' + opts.paddingTop + 'px;"' : "";
+    return '<div class="bracket"' + style + ">" + cols + "</div>";
   };
 
   window.vsSideClass = function (side, m) {

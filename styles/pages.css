@@ -210,6 +210,9 @@ body.projector-mode {
   padding: 7px 26px;
   font-size: clamp(1rem, 2vw, 1.4rem);
 }
+.proj-status-row { display: flex; align-items: center; justify-content: center; gap: 14px; margin-top: 12px; flex-wrap: wrap; }
+.proj-status-row .badge { font-size: 1rem; padding: 7px 16px; }
+.proj-status-row .proj-round { margin-top: 0; }
 .proj-grid { width: min(1500px, 96%); margin: 26px auto 60px; display: grid; grid-template-columns: repeat(auto-fill, minmax(430px, 1fr)); gap: 16px; }
 .proj-table {
   background: #141d38;
@@ -431,13 +434,13 @@ body.projector-mode {
 .proj-standings tr.top .pos { color: #ffd166; }
 
 .projector-mode .bracket-wrap { width: min(1600px, 96%); margin: 10px auto; }
-.projector-mode .bracket { gap: 52px; padding: 10px 6px 20px; }
-.projector-mode .b-match { width: 320px; border-radius: 12px; border-width: 2px; }
-.projector-mode .b-player { font-size: 1.2rem; padding: 9px 16px; min-height: 44px; }
+.projector-mode .bracket { gap: 56px; padding: 10px 6px 20px; }
+.projector-mode .b-match { width: 300px; border-radius: 12px; border-width: 2px; }
+.projector-mode .b-player { font-size: 1.05rem; padding: 6px 14px; min-height: 37px; }
 .projector-mode .b-player small { font-size: 0.85rem; }
-.projector-mode .b-vs { font-size: 0.95rem; padding: 5px 0; }
-.projector-mode .b-round-label { font-size: 1.1rem; margin-bottom: 14px; }
-.projector-mode .b-mark { font-size: 1.2rem; }
+.projector-mode .b-vs { font-size: 0.9rem; padding: 4px 0; }
+.projector-mode .b-round-label { font-size: 1.05rem; margin-bottom: 12px; }
+.projector-mode .b-mark { font-size: 1.05rem; }
 
 .proj-player.winner { color: #5ef09a; }
 .proj-player.winner small { color: #7dbf9b; }

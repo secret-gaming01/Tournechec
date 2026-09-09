@@ -141,16 +141,11 @@
             <h2>Statut et publication</h2>
             <p class="sub">Publier envoie automatiquement une notification (table, couleur, adversaire) à chaque joueur présent.</p>
 
-            <div class="grid grid-2 mb-3">
+<div class="grid grid-2 mb-3">
               <div class="card" style="box-shadow:none;">
                 <h4 class="mb-1">Publier les tables actuelles</h4>
                 <p class="muted small mb-2">Envoie les assignations de la dernière ronde générée et passe le tournoi « en cours ».</p>
                 <button class="btn btn-primary" id="publish-btn">Publier + notifier les joueurs</button>
-              </div>
-              <div class="card" style="box-shadow:none;">
-                <h4 class="mb-1">Ouvrir le projecteur</h4>
-                <p class="muted small mb-2">Affichage plein écran des tables pour la salle : rondes, joueurs, couleurs, résultats.</p>
-                <a class="btn btn-outline" id="projector-link" target="_blank">Ouvrir le mode projecteur</a>
               </div>
             </div>
 
@@ -600,9 +595,8 @@ function renderRounds() {
       }
     });
 
-    function renderStatus() {
+function renderStatus() {
       const t = detail.tournament;
-      document.getElementById("projector-link").href = "panel-projecteur.html?tournoi=" + t.id;
       const helpMap = {
         brouillon: "Statut actuel : brouillon. Génère et publie les tables quand les inscriptions sont prêtes.",
         publie: "Statut actuel : publié mais pas encore démarré. Publie les tables pour passer « en cours ».",
