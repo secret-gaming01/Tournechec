@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>(function(){try{var t=localStorage.getItem("tc_theme");if(t!=="dark"&&t!=="light"){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.dataset.theme=t;}catch(e){}})();</script>
+  <title>Tournoi · Tournechec</title>
+  <meta name="description" content="Détails d'un tournoi Tournechec : règlements, participants, tables et pyramide éliminatoire.">
+  <link rel="icon" type="image/svg+xml" href="media/images/logo.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles/general.css">
+  <link rel="stylesheet" href="styles/header.css">
+  <link rel="stylesheet" href="styles/bottom.css">
+  <link rel="stylesheet" href="styles/pages.css">
+</head>
+<body data-page="tournoi">
+  <div id="site-header"></div>
+
+  <main class="section-tight">
+    <div class="container">
+      <div id="t-head"></div>
+      <div id="t-desc"></div>
+      <div id="t-join-box"></div>
+      <div id="t-content" class="mt-3"></div>
+    </div>
+  </main>
+
+  <div id="site-footer"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+  <script src="js/animations.js"></script>
+  <script src="js/navigation.js"></script>
+  <script>
+    const tid = qsParam("tournoi");
+    const STATUS_LABEL = { brouillon: "Brouillon", publie: "Inscriptions ouvertes", en_cours: "En cours", termine: "Terminé" };
+    const RESULT_LABEL = { "1-0": "1 - 0", "0-1": "0 - 1", "1/2": "½ - ½", bye: "Bye" };
+    const BH = 76, BG = 16;
+    let detail = null;
+    let me = null;
+
+    if (!tid) {
+      document.body.innerHTML = '<div style="padding:80px;text-align:center;font-family:sans-serif;"><h2>Tournoi non précisé</h2><p><a href="s-inscrire-a-un-tournoi.html">Voir les tournois</a></p></div>';
+    }
+
+    function renderPlayer(p, colorClass, cls) {
+      if (!p) return '<div class="b-player b-empty">—</div>';
+      const mark = cls === "b-win" ? '<span class="b-mark">✓</span>'
+        : cls === "b-loss" ? '<span class="b-mark loss">✗</span>'
+        : cls === "b-draw" ? '<span class="b-mark draw">=</span>' : "";
+      return `<div class="b-player ${cls}">${mark}<span class="color-dot ${colorClass}"></span><span class="b-name">${escapeHtml(p.name)}</span><small>${p.elo}</small></div>`;
+    }
+
+    function matchHtml(m, top) {
+      const w = m.white, b = m.black;
+      let winId = null;
+      if (m.result === "1-0") winId = w ? w.id : null;
+      else if (m.result === "0-1") winId = b ? b.id : null;
+      const draw = m.result === "1/2";
+      const wCls = winId === (w && w.id) ? "b-win" : draw ? "b-draw" : m.result ? "b-loss" : "";
+      const bCls = winId === (b && b.id) ? "b-win" : draw ? "b-draw" : m.result ? "b-loss" : "";
+      let inner;
+      if (m.result === "bye") {
+        inner = renderPlayer(w, "color-w", "b-win") + '<div class="b-player b-bye">Exempt (bye) · +1 point</div>';
+      } else {
+        inner = renderPlayer(w, "color-w", wCls) + '<div class="b-vs">Table ' + m.table_number + " · " + (RESULT_LABEL[m.result] || "À jouer") + "</div>" + renderPlayer(b, "color-b", bCls);
+      }
+      return `<div class="b-match" style="margin-top:${top}px;">${inner}</div>`;
+    }
+
+    function renderBracket() {
+      const rounds = detail.rounds;
+      if (!rounds.length) {
+        return '<div class="card"><p class="muted text-center" style="padding:24px;">Les tables de la première ronde n\'ont pas encore été générées.</p></div>';
+      }
+      let prevTops = null;
+      const cols = rounds.map((round, ri) => {
+        let tops;
+        if (ri === 0) {
+          tops = round.matches.map((_, i) => i * (BH + BG));
+        } else {
+          tops = round.matches.map((_, j) => ((prevTops[2 * j] || 0) + (prevTops[2 * j + 1] || 0)) / 2);
+        }
+        prevTops = tops;
+        return `<div class="b-col">
+          <div class="b-round-label">Ronde ${round.round_number}</div>
+          ${round.matches.map((m, mi) => matchHtml(m, tops[mi])).join("")}
+        </div>`;
+      }).join("");
+      return `<div class="bracket">${cols}</div>`;
+    }
+
+    function resultBadge(r) {
+      if (r === "1-0") return '<span class="badge badge-green">1 - 0</span>';
+      if (r === "0-1") return '<span class="badge badge-green">0 - 1</span>';
+      if (r === "1/2") return '<span class="badge badge-amber">½ - ½</span>';
+      if (r === "bye") return '<span class="badge badge-blue">Bye</span>';
+      return '<span class="badge badge-gray">À jouer</span>';
+    }
+
+    function renderSwiss() {
+      let html = `<div class="card mb-3"><h3 class="mb-2">Classement</h3>`;
+      if (!detail.standings.length) html += '<p class="muted small">Aucun participant.</p>';
+      else html += `<div class="table-wrap"><table class="data">
+        <thead><tr><th>Rang</th><th>Joueur</th><th>Elo</th><th>Points</th><th>Départ.</th><th>V</th><th>N</th><th>D</th></tr></thead>
+        <tbody>${detail.standings.map((s, i) => `
+          <tr><td><strong>${i + 1}</strong></td><td>${escapeHtml(s.name)}</td><td>${s.elo}</td><td><strong>${s.points}</strong></td>
+          <td class="muted">${s.buchholz != null ? s.buchholz : "—"}</td><td>${s.wins}</td><td>${s.draws}</td><td>${s.losses}</td></tr>`).join("")}
+        </tbody></table></div>`;
+      html += "</div>";
+      detail.rounds.forEach((round) => {
+        html += `<div class="card mb-2"><h4 class="mb-1">Ronde ${round.round_number}</h4>`;
+        if (!round.matches.length) { html += '<p class="muted small">Aucune table.</p>'; }
+        else {
+          html += '<div class="table-wrap"><table class="data"><thead><tr><th>Table</th><th>Blancs</th><th>Noirs</th><th>Résultat</th></tr></thead><tbody>';
+          round.matches.forEach((m) => {
+            html += `<tr><td>${m.table_number}</td><td>${escapeHtml(m.white ? m.white.name : "—")}</td><td>${escapeHtml(m.black ? m.black.name : "Exempt")}</td><td>${resultBadge(m.result)}</td></tr>`;
+          });
+          html += "</tbody></table></div>";
+        }
+        html += "</div>";
+      });
+      return html;
+    }
+
+    function render() {
+      const t = detail.tournament;
+      document.title = t.name + " · Tournechec";
+      const finishedNow = t.status === "termine";
+      const champBanner = finishedNow
+        ? `<div class="champ-banner"><span class="champ-tag">Champion</span><strong>${escapeHtml(t.champion || "?")}</strong> du tournoi « ${escapeHtml(t.name)} »</div>`
+        : "";
+      document.getElementById("t-head").innerHTML = `
+        <div class="flex-between mb-2 reveal visible">
+          <div>
+            <span class="kicker">Détails du tournoi</span>
+            <h1 style="font-size:clamp(1.5rem,3.2vw,2.3rem);">${escapeHtml(t.name)}</h1>
+          </div>
+          <span class="badge status-${t.status}">${STATUS_LABEL[t.status] || t.status}</span>
+        </div>
+        <div class="flex-gap mb-2">
+          <span class="badge ${t.format === "elimination" ? "badge-amber" : "badge-green"}">${t.format === "elimination" ? "Élimination directe (pyramide)" : "Système suisse"}</span>
+          <span class="badge badge-gray">${detail.participants.length} participant${detail.participants.length > 1 ? "s" : ""}</span>
+          <span class="badge ${t.public ? "badge-blue" : "badge-violet"}">${t.public ? "Public" : "Privé"}</span>
+        </div>
+        ${champBanner}`;
+      document.getElementById("t-desc").innerHTML = `
+        <div class="grid grid-2 small" style="gap:8px;margin-bottom:14px;">
+          <div><strong>Lieu :</strong> ${escapeHtml(t.location || "À confirmer")}</div>
+          <div><strong>Début :</strong> ${escapeHtml(t.start_date || "À confirmer")}</div>
+          <div><strong>Fin :</strong> ${escapeHtml(t.end_date || "À confirmer")}</div>
+          <div><strong>Ronde actuelle :</strong> ${t.current_round > 0 ? "Ronde " + t.current_round : "Tables pas encore générées"}</div>
+        </div>
+        ${t.description ? `<p>${escapeHtml(t.description)}</p>` : ""}`;
+
+      renderJoinBox(finishedNow);
+      renderContent();
+    }
+
+    function renderJoinBox(finishedNow) {
+      const box = document.getElementById("t-join-box");
+      const t = detail.tournament;
+      if (finishedNow) {
+        box.innerHTML = '<div class="alert alert-info"><strong>Tournoi terminé.</strong> Les inscriptions sont fermées : tu peux consulter les résultats et la pyramide ci-dessous.</div>';
+        return;
+      }
+      box.innerHTML = `
+        <div class="card" style="padding:20px 22px;">
+          <h4 class="mb-1">Participer à ce tournoi</h4>
+          ${me && detail.is_participant
+            ? '<p class="muted small">Tu es déjà inscrit(e) à ce tournoi. Retrouve tes tables dans <a href="panel-joueurs.html?tournoi=' + t.id + '">ton espace joueur</a>.</p>'
+            : `<label class="checkbox-line mb-2"><input type="checkbox" id="join-accept"><span>J'ai lu les règlements ci-dessous et je souhaite m'inscrire.</span></label>
+               <div class="alert alert-error" id="join-err" hidden></div>
+               <button class="btn btn-primary" id="join-btn" disabled>M'inscrire à ce tournoi</button>`}
+        </div>`;
+      if (!(me && detail.is_participant)) {
+        const accept = document.getElementById("join-accept");
+        const btn = document.getElementById("join-btn");
+        accept.addEventListener("change", () => { btn.disabled = !accept.checked; });
+        btn.addEventListener("click", async () => {
+          btn.disabled = true;
+          btn.textContent = "Inscription en cours...";
+          try {
+            await api("/tournaments/" + t.id + "/join", { method: "POST", body: { accept_rules: true } });
+            toast("Inscription confirmée ! Retrouve les détails dans ton espace joueur.", "ok");
+            detail.is_participant = true;
+            renderJoinBox(false);
+          } catch (err) {
+            const boxE = document.getElementById("join-err");
+            if (err.status === 401) {
+              window.location.href = "se-connecter.html?next=tournoi.html?tournoi=" + t.id;
+              return;
+            }
+            boxE.textContent = err.message;
+            boxE.hidden = false;
+            btn.disabled = false;
+          } finally {
+            btn.textContent = "M'inscrire à ce tournoi";
+          }
+        });
+      }
+    }
+
+    function renderRèglements() {
+      const t = detail.tournament;
+      return `<div class="card mb-3"><h3 class="mb-2">Règlements</h3><div class="rules-box">${escapeHtml(t.rules || "Les règlements seront communiqués par l'arbitre.")}</div></div>`;
+    }
+
+    function renderContent() {
+      const t = detail.tournament;
+      const host = document.getElementById("t-content");
+      const règlements = renderRèglements();
+      if (t.format === "elimination") {
+        host.innerHTML = `<h2 class="mb-2">Pyramide éliminatoire</h2><p class="muted small mb-3">Chaque match montre les adversaires : <span class="b-mark">✓</span> gagnant qui se qualifie, <span class="b-mark loss">✗</span> éliminé.</p><div class="bracket-wrap">${renderBracket()}</div>` + règlements;
+      } else {
+        host.innerHTML = renderSwiss() + règlements;
+      }
+    }
+
+    async function load() {
+      try {
+        const meRes = await api("/me");
+        me = meRes.user;
+        detail = await api("/tournaments/" + tid);
+        render();
+      } catch (err) {
+        document.getElementById("t-head").innerHTML = '<h1>Tournoi introuvable ou privé</h1>';
+        document.getElementById("t-desc").innerHTML = '<p class="muted">' + escapeHtml(err.message) + '</p>';
+      }
+    }
+
+    load();
+    setInterval(async () => {
+      if (document.hidden || !detail || detail.tournament.status === "termine") return;
+      try {
+        detail = await api("/tournaments/" + tid);
+        render();
+      } catch {}
+    }, 15000);
+  </script>
+</body>
+</html>
