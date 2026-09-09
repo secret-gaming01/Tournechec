@@ -169,9 +169,6 @@
   font-size: 0.95rem;
 }
 .vs-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 600; font-size: 0.95rem; }
-.color-dot { width: 15px; height: 15px; border-radius: 4px; display: inline-block; border: 1px solid var(--border); vertical-align: -2px; }
-.color-w { background: #fff; }
-.color-b { background: #101a30; }
 
 .result-select select { min-width: 90px; }
 
@@ -377,6 +374,7 @@ body.projector-mode {
   min-height: 34px;
 }
 .b-player small { color: var(--muted); font-weight: 500; margin-left: 2px; }
+.b-player .b-color { color: var(--muted); font-weight: 500; font-size: 0.82rem; white-space: nowrap; }
 .b-player .b-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .b-vs {
   text-align: center;

@@ -37,7 +37,8 @@
         : cls === "b-draw"
           ? '<span class="b-mark draw">=</span>'
           : "";
-    return `<div class="b-player ${cls}">${mark}<span class="color-dot ${colorClass}"></span><span class="b-name">${esc(p.name)}</span><small>${p.elo != null ? p.elo : ""}</small></div>`;
+    const colorText = colorClass === "color-w" ? "Blancs" : "Noirs";
+    return `<div class="b-player ${cls}">${mark}<span class="b-name">${esc(p.name)}</span><span class="b-color"> (${colorText})</span><small>${p.elo != null ? p.elo : ""}</small></div>`;
   }
 
   function matchBox(m, top) {

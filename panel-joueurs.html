@@ -103,12 +103,8 @@
           } else {
             const iAmWhite = mine.white && mine.white.id === me.id;
             const opponent = iAmWhite ? mine.black : mine.white;
-            const myColor = iAmWhite
-              ? '<span class="color-dot color-w"></span> Blancs'
-              : '<span class="color-dot color-b"></span> Noirs';
-            const oppColor = iAmWhite
-              ? '<span class="color-dot color-b"></span> Noirs'
-              : '<span class="color-dot color-w"></span> Blancs';
+const myColor = iAmWhite ? "Blancs" : "Noirs";
+            const oppColor = iAmWhite ? "Noirs" : "Blancs";
 let verdict = "";
             if (mine.result === "1-0") verdict = iAmWhite ? "Victoire !" : "Défaite";
             else if (mine.result === "0-1") verdict = iAmWhite ? "Défaite" : "Victoire !";

@@ -490,9 +490,9 @@ function renderRounds() {
         <div class="match-row">
           <div class="table-chip">Table<br>${m.table_number}</div>
 <div class="vs-line">
-            <span><span class="color-dot color-w"></span> ${whiteName}${markFor(wCls)}</span>
+            <span>${whiteName} <span class="muted">(Blancs)</span>${markFor(wCls)}</span>
             <span class="muted">contre</span>
-            <span><span class="color-dot color-b"></span> ${blackName}${markFor(bCls)}</span>
+            <span>${blackName} <span class="muted">(Noirs)</span>${markFor(bCls)}</span>
           </div>
           ${scoreControl}
           <div class="flex-gap">

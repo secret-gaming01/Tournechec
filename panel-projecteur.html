@@ -65,10 +65,10 @@
       const bCls = out.draw ? "draw" : out.winner === tb.black ? "winner" : tb.result ? "loser" : "";
       const mark = (side) => (side === "winner" ? '<span class="proj-mark">✓</span>' : side === "draw" ? '<span class="proj-mark draw">=</span>' : "");
       const whiteSide = tb.white
-        ? `<div class="proj-player ${wCls}"><span class="color-dot color-w"></span> ${escapeHtml(tb.white.name)} ${mark(wCls)} <small>Elo ${tb.white.elo}</small></div>`
+        ? `<div class="proj-player ${wCls}">${escapeHtml(tb.white.name)} <span class="muted">(Blancs)</span> ${mark(wCls)} <small>Elo ${tb.white.elo}</small></div>`
         : "";
       const blackSide = tb.black
-        ? `<div class="proj-player ${bCls}"><span class="color-dot color-b"></span> ${escapeHtml(tb.black.name)} ${mark(bCls)} <small>Elo ${tb.black.elo}</small></div>`
+        ? `<div class="proj-player ${bCls}">${escapeHtml(tb.black.name)} <span class="muted">(Noirs)</span> ${mark(bCls)} <small>Elo ${tb.black.elo}</small></div>`
         : '<div class="proj-player b-bye">Exempt (bye)</div>';
       return `
         <div class="proj-table">
