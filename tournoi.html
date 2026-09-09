@@ -32,65 +32,17 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/bracket.js"></script>
   <script src="js/animations.js"></script>
   <script src="js/navigation.js"></script>
   <script>
     const tid = qsParam("tournoi");
     const STATUS_LABEL = { brouillon: "Brouillon", publie: "Inscriptions ouvertes", en_cours: "En cours", termine: "Terminé" };
-    const RESULT_LABEL = { "1-0": "1 - 0", "0-1": "0 - 1", "1/2": "½ - ½", bye: "Bye" };
-    const BH = 76, BG = 16;
     let detail = null;
     let me = null;
 
     if (!tid) {
       document.body.innerHTML = '<div style="padding:80px;text-align:center;font-family:sans-serif;"><h2>Tournoi non précisé</h2><p><a href="s-inscrire-a-un-tournoi.html">Voir les tournois</a></p></div>';
-    }
-
-    function renderPlayer(p, colorClass, cls) {
-      if (!p) return '<div class="b-player b-empty">—</div>';
-      const mark = cls === "b-win" ? '<span class="b-mark">✓</span>'
-        : cls === "b-loss" ? '<span class="b-mark loss">✗</span>'
-        : cls === "b-draw" ? '<span class="b-mark draw">=</span>' : "";
-      return `<div class="b-player ${cls}">${mark}<span class="color-dot ${colorClass}"></span><span class="b-name">${escapeHtml(p.name)}</span><small>${p.elo}</small></div>`;
-    }
-
-    function matchHtml(m, top) {
-      const w = m.white, b = m.black;
-      let winId = null;
-      if (m.result === "1-0") winId = w ? w.id : null;
-      else if (m.result === "0-1") winId = b ? b.id : null;
-      const draw = m.result === "1/2";
-      const wCls = winId === (w && w.id) ? "b-win" : draw ? "b-draw" : m.result ? "b-loss" : "";
-      const bCls = winId === (b && b.id) ? "b-win" : draw ? "b-draw" : m.result ? "b-loss" : "";
-      let inner;
-      if (m.result === "bye") {
-        inner = renderPlayer(w, "color-w", "b-win") + '<div class="b-player b-bye">Exempt (bye) · +1 point</div>';
-      } else {
-        inner = renderPlayer(w, "color-w", wCls) + '<div class="b-vs">Table ' + m.table_number + " · " + (RESULT_LABEL[m.result] || "À jouer") + "</div>" + renderPlayer(b, "color-b", bCls);
-      }
-      return `<div class="b-match" style="margin-top:${top}px;">${inner}</div>`;
-    }
-
-    function renderBracket() {
-      const rounds = detail.rounds;
-      if (!rounds.length) {
-        return '<div class="card"><p class="muted text-center" style="padding:24px;">Les tables de la première ronde n\'ont pas encore été générées.</p></div>';
-      }
-      let prevTops = null;
-      const cols = rounds.map((round, ri) => {
-        let tops;
-        if (ri === 0) {
-          tops = round.matches.map((_, i) => i * (BH + BG));
-        } else {
-          tops = round.matches.map((_, j) => ((prevTops[2 * j] || 0) + (prevTops[2 * j + 1] || 0)) / 2);
-        }
-        prevTops = tops;
-        return `<div class="b-col">
-          <div class="b-round-label">Ronde ${round.round_number}</div>
-          ${round.matches.map((m, mi) => matchHtml(m, tops[mi])).join("")}
-        </div>`;
-      }).join("");
-      return `<div class="bracket">${cols}</div>`;
     }
 
     function resultBadge(r) {
@@ -214,7 +166,7 @@
       const host = document.getElementById("t-content");
       const règlements = renderRèglements();
       if (t.format === "elimination") {
-        host.innerHTML = `<h2 class="mb-2">Pyramide éliminatoire</h2><p class="muted small mb-3">Chaque match montre les adversaires : <span class="b-mark">✓</span> gagnant qui se qualifie, <span class="b-mark loss">✗</span> éliminé.</p><div class="bracket-wrap">${renderBracket()}</div>` + règlements;
+        host.innerHTML = `<h2 class="mb-2">Pyramide éliminatoire</h2><p class="muted small mb-3">Chaque match montre les adversaires : <span class="b-mark">✓</span> gagnant qui se qualifie, <span class="b-mark loss">✗</span> éliminé.</p><div class="bracket-wrap">${renderBracketHTML(detail.rounds)}</div>` + règlements;
       } else {
         host.innerHTML = renderSwiss() + règlements;
       }

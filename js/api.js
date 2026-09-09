@@ -997,6 +997,9 @@ if (seg[0] === "logout" && method === "POST") {
           });
         }
         const regsCount = await q(() => client.from("registrations").select("tournament_id").eq("tournament_id", tid));
+        const rm = await roundsWithMatches(tid);
+        const participants = await registrationRows(tid);
+        const standings = computeStandings(participants, rm.allMatches);
         return {
           tournament: {
             name: t.name,
@@ -1010,6 +1013,8 @@ if (seg[0] === "logout" && method === "POST") {
           },
           round,
           tables,
+          rounds: rm.rounds,
+          standings,
           participants: (regsCount || []).length,
         };
       }

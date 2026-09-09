@@ -398,6 +398,56 @@ body.projector-mode {
 .b-mark.loss { color: var(--danger); }
 .b-mark.draw { color: var(--warn); }
 
+.mini-mark { color: var(--ok); font-weight: 800; margin-left: 6px; }
+.mini-mark.loss { color: var(--danger); }
+.name-win { color: var(--ok); font-weight: 800; }
+.name-loss { color: var(--muted); text-decoration: line-through; opacity: 0.7; }
+.name-draw { color: var(--warn); }
+
+.proj-champion {
+  width: min(900px, 92%);
+  margin: 10px auto 0;
+  padding: 18px 26px;
+  text-align: center;
+  background: #ffd166;
+  color: #101a30;
+  border-radius: 16px;
+  font-size: clamp(1.5rem, 3.4vw, 2.6rem);
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.proj-champion .champ-tag { background: #101a30; color: #ffd166; font-size: 0.9rem; }
+.proj-section-title { text-align: center; font-size: clamp(1.2rem, 2.6vw, 1.9rem); margin: 30px 0 6px; }
+.proj-standings { width: min(1400px, 94%); margin: 30px auto 10px; }
+.proj-standings table { width: 100%; border-collapse: collapse; }
+.proj-standings th, .proj-standings td { padding: 12px 18px; text-align: left; border-bottom: 1px solid #27335c; }
+.proj-standings th { color: #8ea0cc; font-size: 0.8rem; letter-spacing: 0.08em; }
+.proj-standings td { font-size: clamp(1rem, 1.8vw, 1.3rem); color: #fff; }
+.proj-standings .pos { color: #55639a; font-weight: 800; width: 64px; }
+.proj-standings tr.top td { color: #ffd166; }
+.proj-standings tr.top .pos { color: #ffd166; }
+
+.projector-mode .bracket-wrap { width: min(1600px, 96%); margin: 10px auto; }
+.projector-mode .bracket { gap: 52px; padding: 10px 6px 20px; }
+.projector-mode .b-match { width: 320px; border-radius: 12px; border-width: 2px; }
+.projector-mode .b-player { font-size: 1.2rem; padding: 9px 16px; min-height: 44px; }
+.projector-mode .b-player small { font-size: 0.85rem; }
+.projector-mode .b-vs { font-size: 0.95rem; padding: 5px 0; }
+.projector-mode .b-round-label { font-size: 1.1rem; margin-bottom: 14px; }
+.projector-mode .b-mark { font-size: 1.2rem; }
+
+.proj-player.winner { color: #5ef09a; }
+.proj-player.winner small { color: #7dbf9b; }
+.proj-player.loser { color: #8ea0cc; text-decoration: line-through; }
+.proj-player.draw { color: #ffd166; }
+.proj-mark { color: #5ef09a; font-weight: 800; margin-left: 4px; }
+.proj-mark.draw { color: #ffd166; }
+.proj-res.win { color: #5ef09a; font-weight: 700; }
+.proj-res.draw { color: #ffd166; }
+
 @media (max-width: 900px) {
   .panel-layout { grid-template-columns: 1fr; }
   .panel-side { position: static; display: flex; overflow-x: auto; gap: 6px; padding: 8px; }

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script>(function(){try{var t=localStorage.getItem("tc_theme");if(t!=="dark"&&t!=="light"){t=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}document.documentElement.dataset.theme=t;}catch(e){}})();</script>
   <title>Projecteur · Tournechec</title>
-  <meta name="description" content="Affichage plein écran des tables, rondes et couleurs pour la salle de tournoi.">
+  <meta name="description" content="Affichage plein écran des tables, rondes, classement et pyramide pour la salle de tournoi.">
   <link rel="icon" type="image/svg+xml" href="media/images/logo.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,33 +18,66 @@
   <div class="proj-head">
     <h1 id="proj-name">Chargement...</h1>
     <div id="proj-round"></div>
-    <div id="proj-champion"></div>
   </div>
-
+  <div id="proj-champion"></div>
+  <div id="proj-standings"></div>
+  <div class="bracket-wrap" id="proj-bracket"></div>
   <div class="proj-grid" id="proj-grid"></div>
-  <p class="proj-meta" id="proj-meta">Actualisation automatique toutes les 15 secondes</p>
+  <p class="proj-meta" id="proj-meta">Actualisation automatique toutes les 15 secondes (F = plein écran)</p>
 
   <div class="proj-controls">
-    <button class="btn btn-primary" id="fullscreen-btn">Plein écran (F11 ou clic)</button>
+    <button class="btn btn-outline" id="refresh-btn" style="background:#141d38;border-color:#27335c;color:#eef2ff;">Actualiser</button>
+    <button class="btn btn-primary" id="fullscreen-btn">Plein écran (F)</button>
     <button class="btn btn-outline" style="background:#141d38;border-color:#27335c;color:#eef2ff;" onclick="window.close()">Fermer</button>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/bracket.js"></script>
   <script src="js/animations.js"></script>
   <script>
+    window.BRACKET_STEP = 130;
     function escapeHtml(s) {
       return String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({
         "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
       }[c]));
     }
     const tid = qsParam("tournoi");
-    const RESULT_LABEL = { "1-0": "Les blancs ont gagné", "0-1": "Les noirs ont gagné", "1/2": "Partie nulle", bye: "Exempt (bye)" };
+    const STATUS_LABEL = { brouillon: "Brouillon", publie: "Inscriptions ouvertes", en_cours: "En cours", termine: "Terminé" };
+    const RESULT_LABEL = { "1-0": "VICTOIRE DES BLANCS", "0-1": "VICTOIRE DES NOIRS", "1/2": "PARTIE NULLE", bye: "EXEMPT (BYE)" };
 
     if (!tid) {
-      document.body.innerHTML = '<div style="padding:80px;text-align:center;color:#fff;font-family:sans-serif;"><h2>Tournoi non précisé</h2></div>';
+      document.body.innerHTML = '<div style="padding:80px;text-align:center;color:#fff;font-family:sans-serif;"><h2>Tournoi non précisé</h2><p style="color:#aab4cc;"><a href="mes-tournois.html" style="color:#8ab4ff;">Retour à mes tournois</a></p></div>';
       throw new Error("no tid");
+    }
+
+    function resultClass(tb) {
+      const out = matchOutcome(tb);
+      if (tb.result === "1/2") return "draw";
+      if (tb.result && out.winner) return "win";
+      return "";
+    }
+
+    function tableCard(tb) {
+      const out = matchOutcome(tb);
+      const wCls = out.draw ? "draw" : out.winner === tb.white ? "winner" : tb.result ? "loser" : "";
+      const bCls = out.draw ? "draw" : out.winner === tb.black ? "winner" : tb.result ? "loser" : "";
+      const mark = (side) => (side === "winner" ? '<span class="proj-mark">✓</span>' : side === "draw" ? '<span class="proj-mark draw">=</span>' : "");
+      const whiteSide = tb.white
+        ? `<div class="proj-player ${wCls}"><span class="color-dot color-w"></span> ${escapeHtml(tb.white.name)} ${mark(wCls)} <small>Elo ${tb.white.elo}</small></div>`
+        : "";
+      const blackSide = tb.black
+        ? `<div class="proj-player ${bCls}"><span class="color-dot color-b"></span> ${escapeHtml(tb.black.name)} ${mark(bCls)} <small>Elo ${tb.black.elo}</small></div>`
+        : '<div class="proj-player b-bye">Exempt (bye)</div>';
+      return `
+        <div class="proj-table">
+          <div class="num">${tb.table_number}</div>
+          ${whiteSide}
+          <div class="proj-vs">CONTRE</div>
+          ${blackSide}
+          <div class="proj-res ${resultClass(tb)}">${tb.result ? RESULT_LABEL[tb.result] : "EN ATTENTE DE RÉSULTAT"}</div>
+        </div>`;
     }
 
     function render(data) {
@@ -55,27 +88,44 @@
       if (t.status === "termine" && t.champion) {
         document.getElementById("proj-round").innerHTML = "";
         document.getElementById("proj-champion").innerHTML =
-          `<div class="proj-round">Champion : ${escapeHtml(t.champion)}</div>`;
-      } else if (data.round > 0) {
-        document.getElementById("proj-round").innerHTML = `Ronde ${data.round} — ${data.tables.length} table(s)`;
+          `<div class="proj-champion"><span class="champ-tag">Champion</span> ${escapeHtml(t.champion)}</div>`;
+      } else if (data.round && data.round.round_number > 0) {
+        document.getElementById("proj-round").innerHTML =
+          `<div class="proj-round">Ronde ${data.round.round_number} — ${data.tables.length} table(s)</div>`;
         document.getElementById("proj-champion").innerHTML = "";
       } else {
-        document.getElementById("proj-round").innerHTML = "Tables en préparation...";
+        document.getElementById("proj-round").innerHTML =
+          `<div class="proj-round">${STATUS_LABEL[t.status] || t.status} — tables en préparation...</div>`;
         document.getElementById("proj-champion").innerHTML = "";
       }
 
+      const standingsBox = document.getElementById("proj-standings");
+      if (t.format === "suisse" && (data.standings || []).length) {
+        standingsBox.innerHTML = `<div class="proj-standings"><table>
+          <thead><tr><th></th><th>Joueur</th><th>Points</th><th>V</th><th>N</th><th>D</th></tr></thead>
+          <tbody>${data.standings.slice(0, 12).map((s, i) => `
+            <tr class="${i < 3 ? "top" : ""}"><td class="pos">${i + 1}</td>
+            <td>${escapeHtml(s.name)}</td><td><strong>${s.points}</strong></td>
+            <td>${s.wins}</td><td>${s.draws}</td><td>${s.losses}</td></tr>`).join("")}
+          </tbody></table></div>`;
+      } else {
+        standingsBox.innerHTML = "";
+      }
+
+      const bracketBox = document.getElementById("proj-bracket");
+      if (t.format === "elimination") {
+        bracketBox.innerHTML = "<h2 class=\"proj-section-title\">Pyramide éliminatoire</h2>" + renderBracketHTML(data.rounds || []);
+      } else {
+        bracketBox.innerHTML = "";
+      }
+
       const grid = document.getElementById("proj-grid");
-      grid.innerHTML = data.tables.map((tb) => `
-        <div class="proj-table">
-          <div class="num">${tb.table_number}</div>
-          <div class="proj-player"><span class="color-dot color-w"></span> ${tb.white ? escapeHtml(tb.white.name) : "<em>—</em>"} ${tb.white ? `<small>Elo ${tb.white.elo}</small>` : ""}</div>
-          <div class="proj-vs">CONTRE</div>
-          <div class="proj-player"><span class="color-dot color-b"></span> ${tb.black ? escapeHtml(tb.black.name) : "<em>Exempt</em>"} ${tb.black ? `<small>Elo ${tb.black.elo}</small>` : ""}</div>
-          <div class="proj-res">${RESULT_LABEL[tb.result] || "&nbsp;"}</div>
-        </div>`).join("");
+      grid.innerHTML = data.tables.length
+        ? data.tables.map(tableCard).join("")
+        : '<p class="proj-meta">Aucune table publiée pour l\'instant.</p>';
 
       document.getElementById("proj-meta").innerHTML =
-        `${data.participants} participant(s) · ${t.location ? escapeHtml(t.location) + " · " : ""}${t.start_date ? escapeHtml(t.start_date) : ""}`;
+        `${data.participants} participant(s) · ${t.location ? escapeHtml(t.location) + " · " : ""}${t.start_date ? escapeHtml(t.start_date) : ""} · ${STATUS_LABEL[t.status] || t.status}`;
     }
 
     async function tick() {
@@ -87,6 +137,7 @@
       }
     }
 
+    document.getElementById("refresh-btn").addEventListener("click", tick);
     document.getElementById("fullscreen-btn").addEventListener("click", async () => {
       try {
         if (!document.fullscreenElement) {
@@ -100,7 +151,7 @@
       if (e.key === "f" || e.key === "F") document.getElementById("fullscreen-btn").click();
     });
 
-api("/me").then((d) => {
+    api("/me").then((d) => {
       const u = d.user;
       if (!u || (u.role !== "arbitre" && u.role !== "admin")) {
         document.body.innerHTML = '<div style="padding:80px;text-align:center;color:#fff;font-family:sans-serif;"><h3>Accès réservé aux arbitres</h3><p style="color:#aab4cc;"><a href="se-connecter.html" style="color:#8ab4ff;">Connexion</a> · <a href="accueil.html" style="color:#8ab4ff;">Accueil</a></p></div>';

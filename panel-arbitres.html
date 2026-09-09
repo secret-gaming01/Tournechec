@@ -195,9 +195,10 @@
 
   <div id="site-footer"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/bracket.js"></script>
   <script src="js/animations.js"></script>
   <script src="js/navigation.js"></script>
   <script>
@@ -433,24 +434,45 @@
       }
     });
 
-    function renderRounds() {
+function renderRounds() {
       const box = document.getElementById("rounds-box");
       if (!detail.rounds.length) {
         box.innerHTML = '<div class="empty-state"><strong>Aucune table générée</strong>Clique sur « Générer les tables » ci-dessus : la ronde 1 sera créée selon l\u2019Elo des joueurs présents.</div>';
         return;
       }
-      box.innerHTML = detail.rounds.slice().reverse().map((round) => `
+      let html = "";
+      if (detail.tournament.format === "elimination") {
+        html = `<div class="card mb-3" style="box-shadow:none;">
+          <div class="flex-between mb-2">
+            <h4>Pyramide éliminatoire</h4>
+            <span class="muted small"><span class="b-mark">✓</span> qualifié · <span class="b-mark loss">✗</span> éliminé · <span class="b-mark draw">=</span> nul</span>
+          </div>
+          <div class="bracket-wrap">${renderBracketHTML(detail.rounds)}</div>
+        </div>`;
+      }
+      html += detail.rounds.slice().reverse().map((round) => `
         <div class="round-banner">
           <span>Ronde ${round.round_number}</span>
           <span class="muted small">${round.matches.filter((m) => m.result).length}/${round.matches.length} pointées</span>
         </div>
         ${round.matches.map((m) => matchRow(m)).join("")}
       `).join("");
+      box.innerHTML = html;
     }
 
     function matchRow(m) {
-      const whiteName = m.white ? `${escapeHtml(m.white.name)} <small class="muted">(${m.white.elo})</small>` : "<em class='muted'>—</em>";
-      const blackName = m.black ? `${escapeHtml(m.black.name)} <small class="muted">(${m.black.elo})</small>` : "<em class='muted'>Exempt (bye)</em>";
+      const wCls = vsSideClass("w", m);
+      const bCls = vsSideClass("b", m);
+      const markFor = (s) => s === "win" ? '<span class="mini-mark">✓</span>'
+        : s === "loss" ? '<span class="mini-mark loss">✗</span>'
+        : s === "draw" ? '<span class="mini-mark">=</span>' : "";
+      const nameHtml = (p, cls) => {
+        if (!p) return "<em class='muted'>Exempt (bye)</em>";
+        const inner = `${escapeHtml(p.name)} <small class="muted">(${p.elo})</small>`;
+        return cls ? `<span class="name-${cls}">${inner}</span>` : inner;
+      };
+      const whiteName = m.white ? nameHtml(m.white, wCls) : "<em class='muted'>—</em>";
+      const blackName = m.black ? nameHtml(m.black, bCls) : "<em class='muted'>Exempt (bye)</em>";
       const resultBadge = m.result === "bye"
         ? '<span class="badge badge-gray">Bye</span>'
         : m.result === "1-0" ? '<span class="badge badge-green">1 - 0</span>'
@@ -472,10 +494,10 @@
       return `
         <div class="match-row">
           <div class="table-chip">Table<br>${m.table_number}</div>
-          <div class="vs-line">
-            <span><span class="color-dot color-w"></span> ${whiteName}</span>
+<div class="vs-line">
+            <span><span class="color-dot color-w"></span> ${whiteName}${markFor(wCls)}</span>
             <span class="muted">contre</span>
-            <span><span class="color-dot color-b"></span> ${blackName}</span>
+            <span><span class="color-dot color-b"></span> ${blackName}${markFor(bCls)}</span>
           </div>
           ${scoreControl}
           <div class="flex-gap">

@@ -24,13 +24,15 @@
 
       <div class="grid grid-3 mb-3" id="info-cards"></div>
 
-      <div class="card mb-3 reveal visible">
+<div class="card mb-3 reveal visible">
         <div class="flex-between mb-2">
           <h3>Mes rondes et mes tables</h3>
           <button class="btn btn-outline btn-sm" onclick="location.reload()">Rafraîchir</button>
         </div>
         <div id="my-rounds"><p class="muted small">Chargement...</p></div>
       </div>
+
+      <div id="bracket-card"></div>
 
       <div class="card reveal visible">
         <h3 class="mb-2">Classement en direct</h3>
@@ -41,9 +43,10 @@
 
   <div id="site-footer"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/config.js"></script>
     <script src="js/api.js"></script>
+    <script src="js/bracket.js"></script>
   <script src="js/animations.js"></script>
   <script src="js/navigation.js"></script>
   <script>
@@ -106,17 +109,26 @@
             const oppColor = iAmWhite
               ? '<span class="color-dot color-b"></span> Noirs'
               : '<span class="color-dot color-w"></span> Blancs';
-            let verdict = "";
+let verdict = "";
             if (mine.result === "1-0") verdict = iAmWhite ? "Victoire !" : "Défaite";
             else if (mine.result === "0-1") verdict = iAmWhite ? "Défaite" : "Victoire !";
             else if (mine.result === "1/2") verdict = "Partie nulle";
+            const wCls = vsSideClass("w", mine);
+            const bCls = vsSideClass("b", mine);
+            const markFor = (s) => s === "win" ? '<span class="mini-mark">✓</span>'
+              : s === "loss" ? '<span class="mini-mark loss">✗</span>'
+              : s === "draw" ? '<span class="mini-mark">=</span>' : "";
+            const vsHtml = (p, cls, isMe) =>
+              cls
+                ? `<span class="name-${cls}">${isMe ? "<strong>" : ""}${escapeHtml(p.name)} ${isMe ? "</strong>" : ""}<small>(${p.elo})</small></span>`
+                : `<span>${escapeHtml(p.name)} <small class="muted">(${p.elo})</small></span>`;
             content = `
               <div class="match-row" style="margin-bottom:8px;">
                 <div class="table-chip">Table<br>${mine.table_number}</div>
                 <div class="vs-line">
-                  <span>${escapeHtml(mine.white.name)} <small class="muted">(${mine.white.elo})</small></span>
+                  <span>${vsHtml(mine.white, wCls, iAmWhite)}${markFor(wCls)}</span>
                   <span class="muted">contre</span>
-                  <span>${escapeHtml(mine.black.name)} <small class="muted">(${mine.black.elo})</small></span>
+                  <span>${vsHtml(mine.black, bCls, !iAmWhite)}${markFor(bCls)}</span>
                 </div>
                 <div class="small bold">${myColor}</div>
                 <div class="small muted">Adversaire : ${oppColor}</div>
@@ -125,6 +137,19 @@
           }
           return `<div class="round-banner">Ronde ${round.round_number}<span class="muted small">${round.matches.filter((m) => m.result).length}/${round.matches.length} parties pointées</span></div>${content}`;
         }).join("");
+      }
+
+      const bc = document.getElementById("bracket-card");
+      if (t.format === "elimination") {
+        bc.innerHTML = `<div class="card mb-3 reveal visible">
+          <div class="flex-between mb-2">
+            <h3>Pyramide éliminatoire</h3>
+            <span class="muted small"><span class="b-mark">✓</span> qualifié · <span class="b-mark loss">✗</span> éliminé · <span class="b-mark draw">=</span> nul</span>
+          </div>
+          <div class="bracket-wrap">${renderBracketHTML(detail.rounds)}</div>
+        </div>`;
+      } else {
+        bc.innerHTML = "";
       }
 
       const sb = document.getElementById("standings-box");
