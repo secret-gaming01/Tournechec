@@ -290,7 +290,7 @@
       try {
         await api(`/tournaments/${tid}/presence`, {
           method: "POST",
-          body: { user_id: Number(b.dataset.presence), present: b.dataset.value === "1" },
+          body: { user_id: b.dataset.presence, present: b.dataset.value === "1" },
         });
         await refresh();
         toast("Présence mise à jour.", "ok");
@@ -382,19 +382,19 @@
       const delArb = e.target.closest("[data-del-arb]");
       try {
         if (delPlayer) {
-          const p = detail.participants.find((x) => x.id === Number(delPlayer.dataset.delPlayer));
+const p = detail.participants.find((x) => x.id === delPlayer.dataset.delPlayer);
           if (!confirmAction(`Retirer ${p ? p.name : "ce joueur"} du tournoi ?`)) return;
-          await api(`/tournaments/${tid}/participants`, { method: "POST", body: { action: "remove", user_id: Number(delPlayer.dataset.delPlayer) } });
+          await api(`/tournaments/${tid}/participants`, { method: "POST", body: { action: "remove", user_id: delPlayer.dataset.delPlayer } });
           toast("Joueur retiré.", "ok");
           await refresh();
         } else if (saveElo) {
-          const input = document.querySelector(`[data-elo-input="${saveElo.dataset.saveElo}"]`);
-          await api(`/tournaments/${tid}/participants`, { method: "POST", body: { action: "update", user_id: Number(saveElo.dataset.saveElo), elo: input.value } });
+const input = document.querySelector(`[data-elo-input="${saveElo.dataset.saveElo}"]`);
+          await api(`/tournaments/${tid}/participants`, { method: "POST", body: { action: "update", user_id: saveElo.dataset.saveElo, elo: input.value } });
           toast("Elo mis à jour.", "ok");
           await refresh();
         } else if (delArb) {
           if (!confirmAction("Retirer cet arbitre du tournoi ?")) return;
-          await api(`/tournaments/${tid}/arbitres`, { method: "POST", body: { action: "remove", user_id: Number(delArb.dataset.delArb) } });
+          await api(`/tournaments/${tid}/arbitres`, { method: "POST", body: { action: "remove", user_id: delArb.dataset.delArb } });
           toast("Arbitre retiré.", "ok");
           await refresh();
         }

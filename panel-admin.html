@@ -192,7 +192,7 @@
       const delBtn = e.target.closest("[data-del-user]");
       try {
         if (banBtn) {
-          const u = usersCache.find((x) => x.id === Number(banBtn.dataset.toggleBan));
+          const u = usersCache.find((x) => x.id === banBtn.dataset.toggleBan);
           if (!confirmAction(`${u.banned ? "Débannir" : "Bannir"} ${u.name} ?`)) return;
           await api("/admin/users/" + u.id, { method: "PUT", body: { banned: !u.banned } });
           toast(u.banned ? "Compte débanni." : "Compte banni.", "ok");
